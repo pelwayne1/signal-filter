@@ -3,7 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced token safety scanner for Solana & BSC">
+    <meta name="theme-color" content="#3b82f6">
     <title>Signal Filter - Token Scanner</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- iOS Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Signal Filter">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -40,9 +52,42 @@
             transform: translateY(-1px);
             box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
         }
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
     </style>
 </head>
 <body class="text-white min-h-screen p-8">
+    <!-- Install Prompt (appears when installable) -->
+    <div id="installPrompt" class="install-prompt hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 shadow-2xl flex items-center gap-4 max-w-md">
+            <svg class="w-8 h-8 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <div class="flex-1">
+                <p class="font-bold text-white">Install Signal Filter</p>
+                <p class="text-sm text-blue-100">Add to your home screen for quick access!</p>
+            </div>
+            <button onclick="installApp()" class="bg-white text-blue-600 font-bold px-4 py-2 rounded-lg hover:bg-blue-50 transition-all">
+                Install
+            </button>
+            <button onclick="dismissInstall()" class="text-white hover:text-blue-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="text-center mb-12">
@@ -116,6 +161,38 @@
     <script>
         let chain = 'solana';
         const API = 'https://pelwayne--2e77d232f02211f0a0c942dde27851f2.web.val.run';
+        let deferredPrompt;
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
+
+        // PWA Install Prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.remove('hidden');
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('App installed');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('installPrompt').classList.add('hidden');
+                });
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('installPrompt').classList.add('hidden');
+        }
 
         function selectChain(c) {
             chain = c;
@@ -150,12 +227,8 @@
                     if (m) addr = m[1];
                 }
 
-                console.log('Calling:', API + '/api/scan/' + addr);
-
                 const response = await fetch(API + '/api/scan/' + addr);
                 const data = await response.json();
-
-                console.log('Response:', data);
 
                 if (!response.ok || !data.success) {
                     throw new Error(data.error || 'Failed to fetch');
@@ -164,7 +237,6 @@
                 showResults(data.data, addr);
 
             } catch (e) {
-                console.error('Error:', e);
                 err.textContent = 'Error: ' + e.message;
                 err.classList.remove('hidden');
             } finally {
