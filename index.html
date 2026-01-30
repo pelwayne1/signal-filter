@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Advanced token safety scanner for Solana & BSC">
+    <meta name="description" content="Alpha Sniff AI - Advanced AI-powered token safety scanner for Solana & BSC">
     <meta name="theme-color" content="#3b82f6">
-    <title>Signal Filter - Token Scanner</title>
+    <title>Alpha Sniff AI - Token Scanner</title>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -13,7 +13,7 @@
     <!-- iOS Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Signal Filter">
+    <meta name="apple-mobile-web-app-title" content="Alpha Sniff AI">
     <link rel="apple-touch-icon" href="icon-192.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -64,17 +64,24 @@
             from { transform: translate(-50%, 100px); opacity: 0; }
             to { transform: translate(-50%, 0); opacity: 1; }
         }
+        .sniff-icon {
+            animation: sniff 2s ease-in-out infinite;
+        }
+        @keyframes sniff {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
     </style>
 </head>
 <body class="text-white min-h-screen p-8">
-    <!-- Install Prompt (appears when installable) -->
+    <!-- Install Prompt -->
     <div id="installPrompt" class="install-prompt hidden">
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 shadow-2xl flex items-center gap-4 max-w-md">
             <svg class="w-8 h-8 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             <div class="flex-1">
-                <p class="font-bold text-white">Install Signal Filter</p>
+                <p class="font-bold text-white">Install Alpha Sniff AI</p>
                 <p class="text-sm text-blue-100">Add to your home screen for quick access!</p>
             </div>
             <button onclick="installApp()" class="bg-white text-blue-600 font-bold px-4 py-2 rounded-lg hover:bg-blue-50 transition-all">
@@ -92,19 +99,23 @@
         <!-- Header -->
         <div class="text-center mb-12">
             <div class="flex items-center justify-center gap-4 mb-4">
-                <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-                <h1 class="text-6xl font-bold glow-text">
+                <div class="sniff-icon relative">
+                    <div class="absolute inset-0 bg-blue-500 blur-xl opacity-50"></div>
+                    <svg class="w-12 h-12 text-blue-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold glow-text">
                     <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-                        Signal Filter
+                        Alpha Sniff AI
                     </span>
                 </h1>
             </div>
-            <p class="text-gray-400 text-lg mb-4">Advanced Token Safety Scanner</p>
+            <p class="text-gray-400 text-lg mb-2">AI-Powered Token Safety Scanner</p>
+            <p class="text-gray-500 text-sm mb-4">Sniff out scams before you invest</p>
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10">
                 <div class="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></div>
-                <span class="text-emerald-400 text-sm font-medium">Live Data Connected</span>
+                <span class="text-emerald-400 text-sm font-medium">Live Data • Real-time Analysis</span>
             </div>
         </div>
 
@@ -137,7 +148,7 @@
                 id="scanBtn"
                 class="btn-primary w-full text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg"
             >
-                Analyze Token
+                🔍 Sniff This Token
             </button>
             
             <div id="error" class="hidden mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-300 text-sm"></div>
@@ -153,8 +164,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
             </div>
-            <h3 class="text-xl font-bold mb-3">Ready to Scan</h3>
-            <p class="text-gray-400">Enter any Solana or BSC token address to analyze</p>
+            <h3 class="text-xl font-bold mb-3">Ready to Sniff</h3>
+            <p class="text-gray-400">Enter any Solana or BSC token address</p>
+            <p class="text-gray-500 text-sm mt-2">Our AI will analyze it for safety signals</p>
         </div>
     </div>
 
@@ -215,7 +227,7 @@
             const init = document.getElementById('initial');
 
             btn.disabled = true;
-            btn.textContent = 'Analyzing...';
+            btn.innerHTML = '🔍 Sniffing...';
             err.classList.add('hidden');
             res.innerHTML = '';
             init.classList.add('hidden');
@@ -241,7 +253,7 @@
                 err.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Analyze Token';
+                btn.innerHTML = '🔍 Sniff This Token';
             }
         }
 
@@ -253,12 +265,12 @@
 
             const total = liqScore + volScore + ageScore + 30;
             const flags = [];
-            if (token.liquidity < 10000) flags.push('Low liquidity');
-            if (token.ageHours < 1) flags.push('Very new token');
-            if (volRatio < 0.1) flags.push('Low trading activity');
+            if (token.liquidity < 10000) flags.push('🚨 Low liquidity detected');
+            if (token.ageHours < 1) flags.push('⚠️ Extremely new token');
+            if (volRatio < 0.1) flags.push('📉 Low trading activity');
 
             const score = flags.length > 0 ? Math.min(total, 40) : total;
-            const verdict = score >= 70 ? {l: 'SAFE', e: '✓', c: 'emerald'} : score >= 40 ? {l: 'RISKY', e: '⚠', c: 'yellow'} : {l: 'AVOID', e: '✕', c: 'red'};
+            const verdict = score >= 70 ? {l: 'SAFE', e: '✅', c: 'emerald', t: 'Alpha Approved'} : score >= 40 ? {l: 'RISKY', e: '⚠️', c: 'yellow', t: 'Proceed with Caution'} : {l: 'AVOID', e: '❌', c: 'red', t: 'Red Flags Detected'};
 
             let html = `
                 <div class="card rounded-3xl p-8 mb-6">
@@ -271,19 +283,20 @@
                             </span>
                         </div>
                         <div class="text-center">
-                            <p class="text-sm text-gray-400 mb-3">Safety Score</p>
+                            <p class="text-sm text-gray-400 mb-3">Alpha Score</p>
                             <p class="text-7xl font-bold glow-text">${score}</p>
-                            <div class="bg-${verdict.c}-500/20 border border-${verdict.c}-500/30 rounded-xl px-4 py-2 mt-4 inline-flex items-center gap-2">
-                                <span class="text-2xl">${verdict.e}</span>
-                                <span class="text-${verdict.c}-400 font-bold text-lg">${verdict.l}</span>
+                            <div class="bg-${verdict.c}-500/20 border border-${verdict.c}-500/30 rounded-xl px-4 py-2 mt-4">
+                                <p class="text-2xl mb-1">${verdict.e}</p>
+                                <p class="text-${verdict.c}-400 font-bold text-lg">${verdict.l}</p>
+                                <p class="text-${verdict.c}-300 text-xs mt-1">${verdict.t}</p>
                             </div>
                         </div>
                     </div>`;
 
             if (flags.length > 0) {
                 html += `<div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 mb-6">
-                    <p class="font-bold text-red-400 mb-3">⚠️ Warning Signs</p>
-                    <ul class="space-y-2">${flags.map(f => `<li class="text-red-300">• ${f}</li>`).join('')}</ul>
+                    <p class="font-bold text-red-400 mb-3 text-lg">⚠️ Alpha Sniff Warnings</p>
+                    <ul class="space-y-2">${flags.map(f => `<li class="text-red-300">${f}</li>`).join('')}</ul>
                 </div>`;
             }
 
@@ -295,7 +308,7 @@
                                 <span class="text-sm font-bold">${liqScore}/25</span>
                             </div>
                             <div class="w-full h-2 bg-slate-700 rounded-full">
-                                <div class="h-full bg-blue-500 rounded-full" style="width: ${(liqScore/25)*100}%"></div>
+                                <div class="h-full bg-blue-500 rounded-full transition-all duration-700" style="width: ${(liqScore/25)*100}%"></div>
                             </div>
                         </div>
                         <div>
@@ -304,7 +317,7 @@
                                 <span class="text-sm font-bold">${volScore}/20</span>
                             </div>
                             <div class="w-full h-2 bg-slate-700 rounded-full">
-                                <div class="h-full bg-purple-500 rounded-full" style="width: ${(volScore/20)*100}%"></div>
+                                <div class="h-full bg-purple-500 rounded-full transition-all duration-700" style="width: ${(volScore/20)*100}%"></div>
                             </div>
                         </div>
                         <div>
@@ -313,19 +326,19 @@
                                 <span class="text-sm font-bold">${ageScore}/15</span>
                             </div>
                             <div class="w-full h-2 bg-slate-700 rounded-full">
-                                <div class="h-full bg-cyan-500 rounded-full" style="width: ${(ageScore/15)*100}%"></div>
+                                <div class="h-full bg-cyan-500 rounded-full transition-all duration-700" style="width: ${(ageScore/15)*100}%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="card rounded-2xl p-6">
+                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">💵</span> Liquidity</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Total USD</span>
-                                <span class="font-bold">$${token.liquidity.toLocaleString()}</span>
+                                <span class="font-bold text-emerald-400">$${token.liquidity.toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Liq/MC Ratio</span>
@@ -333,12 +346,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card rounded-2xl p-6">
+                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">📈</span> Volume</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400">24h Volume</span>
-                                <span class="font-bold">$${token.volume24h.toLocaleString()}</span>
+                                <span class="font-bold text-blue-400">$${token.volume24h.toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Vol/Liq Ratio</span>
@@ -346,12 +359,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card rounded-2xl p-6">
-                        <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">⏰</span> Info</h3>
+                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
+                        <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">⏰</span> Token Info</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Age</span>
-                                <span class="font-semibold">${token.ageHours < 24 ? token.ageHours + 'h' : Math.floor(token.ageHours/24) + 'd'}</span>
+                                <span class="font-semibold text-purple-400">${token.ageHours < 24 ? token.ageHours + 'h' : Math.floor(token.ageHours/24) + 'd'}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Price</span>
@@ -359,15 +372,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card rounded-2xl p-6">
+                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">💰</span> Market Cap</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400">FDV</span>
-                                <span class="font-bold">$${(token.marketCap/1000000).toFixed(2)}M</span>
+                                <span class="font-bold text-yellow-400">$${(token.marketCap/1000000).toFixed(2)}M</span>
                             </div>
                         </div>
                     </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-gray-500 text-sm">
+                        🐺 Sniffed by Alpha Sniff AI • Not financial advice
+                    </p>
                 </div>
             `;
 
