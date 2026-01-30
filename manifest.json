@@ -1,25 +1,29 @@
 {
-  "name": "Signal Filter - Token Scanner",
-  "short_name": "Signal Filter",
-  "description": "Advanced token safety scanner for Solana & BSC",
-  "start_url": "/signal-filter/",
-  "scope": "/signal-filter/",
+  "name": "Alpha Sniff AI - Token Scanner",
+  "short_name": "Alpha Sniff AI",
+  "description": "AI-powered token safety scanner for Solana & BSC. Sniff out scams before you invest.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a0e17",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/signal-filter/icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/signal-filter/icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "categories": ["finance", "utilities"],
+  "screenshots": []
+}
   ]
 }
