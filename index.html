@@ -7,10 +7,7 @@
     <meta name="theme-color" content="#3b82f6">
     <title>Alpha Sniff AI - Token Scanner</title>
     
-    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- iOS Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Alpha Sniff AI">
@@ -71,6 +68,22 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
         }
+        .sniffing-animation {
+            animation: sniffing 1.5s ease-in-out infinite;
+        }
+        @keyframes sniffing {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+        .copy-feedback {
+            animation: copyPop 0.3s ease-out;
+        }
+        @keyframes copyPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body class="text-white min-h-screen p-8">
@@ -99,7 +112,7 @@
         <!-- Header -->
         <div class="text-center mb-12">
             <div class="flex items-center justify-center gap-4 mb-4">
-                <div class="sniff-icon relative">
+                <div id="mainIcon" class="sniff-icon relative">
                     <div class="absolute inset-0 bg-blue-500 blur-xl opacity-50"></div>
                     <svg class="w-12 h-12 text-blue-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -116,6 +129,28 @@
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10">
                 <div class="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></div>
                 <span class="text-emerald-400 text-sm font-medium">Live Data • Real-time Analysis</span>
+            </div>
+        </div>
+
+        <!-- Quick Examples -->
+        <div class="card rounded-2xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-gray-300">⚡ Try These Examples</h3>
+                <span class="text-xs text-gray-500">Click to scan</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button onclick="quickScan('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'USDC')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                    <p class="font-semibold text-sm">USDC</p>
+                    <p class="text-xs text-gray-400">Stablecoin • Should be safe</p>
+                </button>
+                <button onclick="quickScan('JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', 'Jupiter')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                    <p class="font-semibold text-sm">Jupiter (JUP)</p>
+                    <p class="text-xs text-gray-400">DEX aggregator</p>
+                </button>
+                <button onclick="quickScan('DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', 'Bonk')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                    <p class="font-semibold text-sm">Bonk</p>
+                    <p class="text-xs text-gray-400">Meme coin</p>
+                </button>
             </div>
         </div>
 
@@ -174,15 +209,14 @@
         let chain = 'solana';
         const API = 'https://pelwayne--2e77d232f02211f0a0c942dde27851f2.web.val.run';
         let deferredPrompt;
+        let currentTokenAddress = '';
 
-        // Register Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
                 .then(reg => console.log('Service Worker registered'))
                 .catch(err => console.log('Service Worker registration failed'));
         }
 
-        // PWA Install Prompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
@@ -193,9 +227,6 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('App installed');
-                    }
                     deferredPrompt = null;
                     document.getElementById('installPrompt').classList.add('hidden');
                 });
@@ -217,6 +248,39 @@
             }
         }
 
+        function quickScan(address, name) {
+            document.getElementById('tokenInput').value = address;
+            scanToken();
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(currentTokenAddress).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                btn.classList.add('copy-feedback');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('copy-feedback');
+                }, 2000);
+            });
+        }
+
+        function shareResults(score, verdict) {
+            const text = `Just scanned a token with Alpha Sniff AI 🐺🔍\n\nAlpha Score: ${score}/100\nVerdict: ${verdict}\n\nTry it: alphasniffai.com`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Alpha Sniff AI Results',
+                    text: text,
+                    url: 'https://alphasniffai.com'
+                });
+            } else {
+                const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                window.open(twitterUrl, '_blank');
+            }
+        }
+
         async function scanToken() {
             const input = document.getElementById('tokenInput').value.trim();
             if (!input) return;
@@ -225,9 +289,11 @@
             const err = document.getElementById('error');
             const res = document.getElementById('results');
             const init = document.getElementById('initial');
+            const icon = document.getElementById('mainIcon');
 
             btn.disabled = true;
             btn.innerHTML = '🔍 Sniffing...';
+            icon.classList.add('sniffing-animation');
             err.classList.add('hidden');
             res.innerHTML = '';
             init.classList.add('hidden');
@@ -238,6 +304,8 @@
                     const m = addr.match(/\/([a-zA-Z0-9]+)$/);
                     if (m) addr = m[1];
                 }
+
+                currentTokenAddress = addr;
 
                 const response = await fetch(API + '/api/scan/' + addr);
                 const data = await response.json();
@@ -254,6 +322,7 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '🔍 Sniff This Token';
+                icon.classList.remove('sniffing-animation');
             }
         }
 
@@ -272,15 +341,32 @@
             const score = flags.length > 0 ? Math.min(total, 40) : total;
             const verdict = score >= 70 ? {l: 'SAFE', e: '✅', c: 'emerald', t: 'Alpha Approved'} : score >= 40 ? {l: 'RISKY', e: '⚠️', c: 'yellow', t: 'Proceed with Caution'} : {l: 'AVOID', e: '❌', c: 'red', t: 'Red Flags Detected'};
 
+            const shortAddr = addr.slice(0,8) + '...' + addr.slice(-6);
+            const explorerUrl = token.chain === 'solana' ? `https://solscan.io/token/${addr}` : `https://bscscan.com/token/${addr}`;
+            const dexscreenerUrl = `https://dexscreener.com/${token.chain}/${addr}`;
+
             let html = `
                 <div class="card rounded-3xl p-8 mb-6">
                     <div class="flex justify-between items-start mb-8 flex-wrap gap-6">
-                        <div>
+                        <div class="flex-1 min-w-[200px]">
                             <p class="text-sm text-gray-400 mb-2">Token Address</p>
-                            <p class="font-mono text-xl font-semibold">${addr.slice(0,8)}...${addr.slice(-6)}</p>
-                            <span class="inline-block px-3 py-1 mt-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 text-xs font-semibold">
-                                ${token.chain.toUpperCase()}
-                            </span>
+                            <div class="flex items-center gap-2 mb-3">
+                                <p class="font-mono text-xl font-semibold">${shortAddr}</p>
+                                <button id="copyBtn" onclick="copyAddress()" class="bg-slate-700/50 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-1 text-xs transition-all">
+                                    📋 Copy
+                                </button>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="inline-block px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 text-xs font-semibold">
+                                    ${token.chain.toUpperCase()}
+                                </span>
+                                <a href="${explorerUrl}" target="_blank" class="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-xs font-semibold hover:bg-purple-500/30 transition-all">
+                                    🔗 Explorer
+                                </a>
+                                <a href="${dexscreenerUrl}" target="_blank" class="inline-block px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-xs font-semibold hover:bg-green-500/30 transition-all">
+                                    📊 DEXScreener
+                                </a>
+                            </div>
                         </div>
                         <div class="text-center">
                             <p class="text-sm text-gray-400 mb-3">Alpha Score</p>
@@ -290,6 +376,9 @@
                                 <p class="text-${verdict.c}-400 font-bold text-lg">${verdict.l}</p>
                                 <p class="text-${verdict.c}-300 text-xs mt-1">${verdict.t}</p>
                             </div>
+                            <button onclick="shareResults(${score}, '${verdict.l}')" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+                                🐦 Share Results
+                            </button>
                         </div>
                     </div>`;
 
@@ -394,4 +483,3 @@
         }
     </script>
 </body>
-</html>
