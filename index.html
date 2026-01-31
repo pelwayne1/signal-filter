@@ -599,11 +599,66 @@
             const volRatio = token.volume24h / token.liquidity;
             const volScore = volRatio < 0.1 ? 2 : volRatio < 0.3 ? 8 : volRatio < 0.5 ? 12 : volRatio < 1.0 ? 16 : 20;
             const ageScore = token.ageHours < 1 ? 2 : token.ageHours < 6 ? 5 : token.ageHours < 24 ? 8 : token.ageHours < 72 ? 12 : 15;
+            
+            // Enhanced holder score with real data
+            let holderScore = 15; // Default if no data
+            if (token.holderData) {
+                if (token.holderData.topHolderPercent > 50) holderScore = 2;
+                else if (token.holderData.topHolderPercent > 40) holderScore = 5;
+                else if (token.holderData.topHolderPercent > 30) holderScore = 10;
+                else if (token.holderData.topHolderPercent > 20) holderScore = 15;
+                else holderScore = 20;
+            }
+            
+            // Enhanced contract safety score with real data
+            let contractScore = 15; // Default if no data
+            if (token.contractSafety) {
+                if (token.chain === 'solana') {
+                    contractScore = 0;
+                    if (token.contractSafety.mintAuthorityRevoked) contractScore += 10;
+                    if (token.contractSafety.freezeAuthorityDisabled) contractScore += 10;
+                } else if (token.chain === 'bsc') {
+                    contractScore = 0;
+                    if (token.contractSafety.ownershipRenounced) contractScore += 15;
+                    if (!token.contractSafety.canMint) contractScore += 5;
+                }
+            }
 
             const flags = [];
             if (token.liquidity < 10000) flags.push('🚨 Low liquidity detected');
             if (token.ageHours < 1) flags.push('⚠️ Extremely new token');
             if (volRatio < 0.1) flags.push('📉 Low trading activity');
+            
+            // Add holder-based flags
+            if (token.holderData) {
+                if (token.holderData.topHolderPercent > 40) {
+                    flags.push(`🐋 Top holder owns ${token.holderData.topHolderPercent.toFixed(1)}% - Whale risk!`);
+                }
+                if (token.holderData.top10HoldersPercent > 70) {
+                    flags.push('📊 Top 10 holders control >70% of supply');
+                }
+            }
+            
+            // Add contract safety flags
+            if (token.contractSafety) {
+                if (token.chain === 'solana') {
+                    if (!token.contractSafety.mintAuthorityRevoked) {
+                        flags.push('⚠️ Mint authority NOT revoked - Can print unlimited tokens!');
+                    }
+                    if (!token.contractSafety.freezeAuthorityDisabled) {
+                        flags.push('🔒 Freeze authority active - Can freeze transfers!');
+                    }
+                } else if (token.chain === 'bsc') {
+                    if (!token.contractSafety.ownershipRenounced) {
+                        flags.push('👤 Ownership NOT renounced - Dev has control!');
+                    }
+                }
+            }
+            
+            // Add rugcheck warnings
+            if (token.rugcheckData && token.rugcheckData.risks && token.rugcheckData.risks.length > 0) {
+                flags.push(`🚩 Rugcheck: ${token.rugcheckData.risks.length} risk(s) detected`);
+            }
 
             const verdict = score >= 70 ? {l: 'SAFE', e: '✅', c: 'emerald', t: 'Alpha Approved'} : score >= 40 ? {l: 'RISKY', e: '⚠️', c: 'yellow', t: 'Proceed with Caution'} : {l: 'AVOID', e: '❌', c: 'red', t: 'Red Flags Detected'};
 
