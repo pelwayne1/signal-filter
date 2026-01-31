@@ -84,9 +84,16 @@
             50% { transform: scale(1.1); }
             100% { transform: scale(1); opacity: 1; }
         }
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+        }
     </style>
 </head>
-<body class="text-white min-h-screen p-8">
+<body class="text-white min-h-screen p-4 md:p-8">
     <!-- Install Prompt -->
     <div id="installPrompt" class="install-prompt hidden">
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 shadow-2xl flex items-center gap-4 max-w-md">
@@ -95,7 +102,7 @@
             </svg>
             <div class="flex-1">
                 <p class="font-bold text-white">Install Alpha Sniff AI</p>
-                <p class="text-sm text-blue-100">Add to your home screen for quick access!</p>
+                <p class="text-sm text-blue-100">Add to your home screen!</p>
             </div>
             <button onclick="installApp()" class="bg-white text-blue-600 font-bold px-4 py-2 rounded-lg hover:bg-blue-50 transition-all">
                 Install
@@ -110,98 +117,160 @@
 
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <div class="text-center mb-12">
-            <div class="flex items-center justify-center gap-4 mb-4">
+        <div class="text-center mb-8 md:mb-12">
+            <div class="flex items-center justify-center gap-3 md:gap-4 mb-4">
                 <div id="mainIcon" class="sniff-icon relative">
                     <div class="absolute inset-0 bg-blue-500 blur-xl opacity-50"></div>
-                    <svg class="w-12 h-12 text-blue-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-10 h-10 md:w-12 md:h-12 text-blue-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                 </div>
-                <h1 class="text-5xl md:text-6xl font-bold glow-text">
+                <h1 class="text-4xl md:text-6xl font-bold glow-text">
                     <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
                         Alpha Sniff AI
                     </span>
                 </h1>
             </div>
-            <p class="text-gray-400 text-lg mb-2">AI-Powered Token Safety Scanner</p>
-            <p class="text-gray-500 text-sm mb-4">Sniff out scams before you invest</p>
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10">
+            <p class="text-gray-400 text-base md:text-lg mb-2">AI-Powered Token Safety Scanner</p>
+            <p class="text-gray-500 text-xs md:text-sm mb-4">Sniff out scams before you invest</p>
+            <div class="inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10">
                 <div class="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></div>
-                <span class="text-emerald-400 text-sm font-medium">Live Data • Real-time Analysis</span>
+                <span class="text-emerald-400 text-xs md:text-sm font-medium">Live Data • Real-time Analysis</span>
             </div>
         </div>
 
-        <!-- Quick Examples -->
-        <div class="card rounded-2xl p-6 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-gray-300">⚡ Try These Examples</h3>
-                <span class="text-xs text-gray-500">Click to scan</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <button onclick="quickScan('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'USDC')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
-                    <p class="font-semibold text-sm">USDC</p>
-                    <p class="text-xs text-gray-400">Stablecoin • Should be safe</p>
-                </button>
-                <button onclick="quickScan('JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', 'Jupiter')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
-                    <p class="font-semibold text-sm">Jupiter (JUP)</p>
-                    <p class="text-xs text-gray-400">DEX aggregator</p>
-                </button>
-                <button onclick="quickScan('DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', 'Bonk')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
-                    <p class="font-semibold text-sm">Bonk</p>
-                    <p class="text-xs text-gray-400">Meme coin</p>
-                </button>
-            </div>
+        <!-- Tabs -->
+        <div class="card rounded-2xl p-2 mb-6 flex gap-2 overflow-x-auto">
+            <button onclick="switchTab('scanner')" id="tabScanner" class="tab-btn active flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm whitespace-nowrap">
+                🔍 Scanner
+            </button>
+            <button onclick="switchTab('history')" id="tabHistory" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+                📊 History
+            </button>
+            <button onclick="switchTab('watchlist')" id="tabWatchlist" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+                ⭐ Watchlist
+            </button>
+            <button onclick="switchTab('batch')" id="tabBatch" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+                ⚡ Batch
+            </button>
         </div>
 
-        <!-- Scanner Card -->
-        <div class="card rounded-3xl p-8 mb-6">
-            <div class="mb-6">
-                <label class="block text-sm font-semibold mb-3 text-gray-300">Select Blockchain</label>
-                <div class="flex gap-3">
-                    <button onclick="selectChain('solana')" id="btnSolana" class="flex-1 py-3.5 px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg">
-                        Solana
+        <!-- Scanner Tab -->
+        <div id="scannerTab" class="tab-content">
+            <!-- Quick Examples -->
+            <div class="card rounded-2xl p-4 md:p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-300 text-sm md:text-base">⚡ Try These Examples</h3>
+                    <span class="text-xs text-gray-500">Click to scan</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <button onclick="quickScan('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'USDC')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                        <p class="font-semibold text-sm">USDC</p>
+                        <p class="text-xs text-gray-400">Stablecoin • Should be safe</p>
                     </button>
-                    <button onclick="selectChain('bsc')" id="btnBsc" class="flex-1 py-3.5 px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50">
-                        BSC
+                    <button onclick="quickScan('JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', 'Jupiter')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                        <p class="font-semibold text-sm">Jupiter (JUP)</p>
+                        <p class="text-xs text-gray-400">DEX aggregator</p>
+                    </button>
+                    <button onclick="quickScan('DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', 'Bonk')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                        <p class="font-semibold text-sm">Bonk</p>
+                        <p class="text-xs text-gray-400">Meme coin</p>
                     </button>
                 </div>
             </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-semibold mb-3 text-gray-300">Token Address</label>
-                <input 
-                    type="text" 
-                    id="tokenInput"
-                    placeholder="Paste token address or DEXScreener link..."
-                    class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-4 px-5 text-white placeholder-gray-500"
+            <!-- Scanner Card -->
+            <div class="card rounded-3xl p-6 md:p-8 mb-6">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-3 text-gray-300">Select Blockchain</label>
+                    <div class="flex gap-3">
+                        <button onclick="selectChain('solana')" id="btnSolana" class="flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg text-sm md:text-base">
+                            Solana
+                        </button>
+                        <button onclick="selectChain('bsc')" id="btnBsc" class="flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm md:text-base">
+                            BSC
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-3 text-gray-300">Token Address</label>
+                    <input 
+                        type="text" 
+                        id="tokenInput"
+                        placeholder="Paste token address or DEXScreener link..."
+                        class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 md:py-4 px-4 md:px-5 text-white placeholder-gray-500 text-sm md:text-base"
+                    >
+                </div>
+
+                <button 
+                    onclick="scanToken()"
+                    id="scanBtn"
+                    class="btn-primary w-full text-white font-bold py-3 md:py-4 px-6 rounded-xl transition-all shadow-lg text-sm md:text-base"
                 >
+                    🔍 Sniff This Token
+                </button>
+                
+                <div id="error" class="hidden mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-300 text-sm"></div>
             </div>
 
-            <button 
-                onclick="scanToken()"
-                id="scanBtn"
-                class="btn-primary w-full text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg"
-            >
-                🔍 Sniff This Token
-            </button>
-            
-            <div id="error" class="hidden mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-300 text-sm"></div>
+            <!-- Results -->
+            <div id="results"></div>
+
+            <!-- Initial State -->
+            <div id="initial" class="card rounded-3xl p-8 md:p-12 text-center">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 md:w-10 md:h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg md:text-xl font-bold mb-3">Ready to Sniff</h3>
+                <p class="text-gray-400 text-sm md:text-base">Enter any Solana or BSC token address</p>
+                <p class="text-gray-500 text-xs md:text-sm mt-2">Our AI will analyze it for safety signals</p>
+            </div>
         </div>
 
-        <!-- Results -->
-        <div id="results"></div>
-
-        <!-- Initial State -->
-        <div id="initial" class="card rounded-3xl p-12 text-center">
-            <div class="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
+        <!-- History Tab -->
+        <div id="historyTab" class="tab-content hidden">
+            <div class="card rounded-3xl p-6 md:p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl md:text-2xl font-bold">📊 Recent Scans</h2>
+                    <button onclick="clearHistory()" class="text-sm text-red-400 hover:text-red-300">Clear All</button>
+                </div>
+                <div id="historyList"></div>
             </div>
-            <h3 class="text-xl font-bold mb-3">Ready to Sniff</h3>
-            <p class="text-gray-400">Enter any Solana or BSC token address</p>
-            <p class="text-gray-500 text-sm mt-2">Our AI will analyze it for safety signals</p>
+        </div>
+
+        <!-- Watchlist Tab -->
+        <div id="watchlistTab" class="tab-content hidden">
+            <div class="card rounded-3xl p-6 md:p-8">
+                <h2 class="text-xl md:text-2xl font-bold mb-6">⭐ Watchlist</h2>
+                <div id="watchlistList"></div>
+            </div>
+        </div>
+
+        <!-- Batch Tab -->
+        <div id="batchTab" class="tab-content hidden">
+            <div class="card rounded-3xl p-6 md:p-8">
+                <h2 class="text-xl md:text-2xl font-bold mb-4">⚡ Batch Scanner</h2>
+                <p class="text-gray-400 mb-6 text-sm md:text-base">Scan multiple tokens at once (one per line)</p>
+                
+                <textarea 
+                    id="batchInput"
+                    placeholder="Paste token addresses (one per line)&#10;Example:&#10;EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&#10;JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+                    class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-4 px-5 text-white placeholder-gray-500 mb-4 h-40 text-sm md:text-base"
+                ></textarea>
+                
+                <button 
+                    onclick="batchScan()"
+                    id="batchBtn"
+                    class="btn-primary w-full text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg"
+                >
+                    🔍 Scan All Tokens
+                </button>
+                
+                <div id="batchResults" class="mt-6"></div>
+            </div>
         </div>
     </div>
 
@@ -210,6 +279,8 @@
         const API = 'https://pelwayne--2e77d232f02211f0a0c942dde27851f2.web.val.run';
         let deferredPrompt;
         let currentTokenAddress = '';
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+        let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
@@ -226,7 +297,7 @@
         function installApp() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
+                deferredPrompt.userChoice.then(() => {
                     deferredPrompt = null;
                     document.getElementById('installPrompt').classList.add('hidden');
                 });
@@ -237,14 +308,29 @@
             document.getElementById('installPrompt').classList.add('hidden');
         }
 
+        function switchTab(tab) {
+            ['scanner', 'history', 'watchlist', 'batch'].forEach(t => {
+                document.getElementById(t + 'Tab').classList.add('hidden');
+                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('active');
+                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('bg-slate-700/30');
+            });
+            
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('bg-slate-700/30');
+            
+            if (tab === 'history') loadHistory();
+            if (tab === 'watchlist') loadWatchlist();
+        }
+
         function selectChain(c) {
             chain = c;
             if (c === 'solana') {
-                document.getElementById('btnSolana').className = 'flex-1 py-3.5 px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg';
-                document.getElementById('btnBsc').className = 'flex-1 py-3.5 px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50';
+                document.getElementById('btnSolana').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg text-sm md:text-base';
+                document.getElementById('btnBsc').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm md:text-base';
             } else {
-                document.getElementById('btnBsc').className = 'flex-1 py-3.5 px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg';
-                document.getElementById('btnSolana').className = 'flex-1 py-3.5 px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50';
+                document.getElementById('btnBsc').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg text-sm md:text-base';
+                document.getElementById('btnSolana').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm md:text-base';
             }
         }
 
@@ -281,6 +367,176 @@
             }
         }
 
+        function addToWatchlist(address, chain, score) {
+            const existing = watchlist.find(item => item.address === address);
+            if (!existing) {
+                watchlist.unshift({
+                    address,
+                    chain,
+                    score,
+                    addedAt: Date.now()
+                });
+                if (watchlist.length > 20) watchlist.pop();
+                localStorage.setItem('watchlist', JSON.stringify(watchlist));
+                alert('✅ Added to watchlist!');
+            } else {
+                alert('Already in watchlist!');
+            }
+        }
+
+        function removeFromWatchlist(address) {
+            watchlist = watchlist.filter(item => item.address !== address);
+            localStorage.setItem('watchlist', JSON.stringify(watchlist));
+            loadWatchlist();
+        }
+
+        function loadHistory() {
+            const list = document.getElementById('historyList');
+            if (scanHistory.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center py-8">No scans yet. Start scanning tokens!</p>';
+                return;
+            }
+            
+            list.innerHTML = scanHistory.map(scan => `
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="font-mono text-sm mb-1">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${scan.chain.toUpperCase()}</span>
+                                <span class="text-xs px-2 py-1 ${scan.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : scan.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${scan.score}</span>
+                                <span class="text-xs text-gray-500">${new Date(scan.timestamp).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <button onclick="rescan('${scan.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                            Rescan
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadWatchlist() {
+            const list = document.getElementById('watchlistList');
+            if (watchlist.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center py-8">No tokens in watchlist. Add some from scan results!</p>';
+                return;
+            }
+            
+            list.innerHTML = watchlist.map(item => `
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="font-mono text-sm mb-1">${item.address.slice(0,8)}...${item.address.slice(-6)}</p>
+                            <div class="flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${item.chain.toUpperCase()}</span>
+                                <span class="text-xs px-2 py-1 ${item.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : item.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${item.score}</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="rescan('${item.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                                Rescan
+                            </button>
+                            <button onclick="removeFromWatchlist('${item.address}')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function rescan(address) {
+            switchTab('scanner');
+            document.getElementById('tokenInput').value = address;
+            scanToken();
+        }
+
+        function clearHistory() {
+            if (confirm('Clear all scan history?')) {
+                scanHistory = [];
+                localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+                loadHistory();
+            }
+        }
+
+        async function batchScan() {
+            const input = document.getElementById('batchInput').value.trim();
+            const addresses = input.split('\n').filter(line => line.trim().length > 0);
+            
+            if (addresses.length === 0) return;
+            if (addresses.length > 10) {
+                alert('Maximum 10 tokens at once');
+                return;
+            }
+            
+            const btn = document.getElementById('batchBtn');
+            const results = document.getElementById('batchResults');
+            
+            btn.disabled = true;
+            btn.textContent = `Scanning ${addresses.length} tokens...`;
+            results.innerHTML = '';
+            
+            const scans = [];
+            for (let addr of addresses) {
+                try {
+                    const response = await fetch(API + '/api/scan/' + addr.trim());
+                    const data = await response.json();
+                    if (data.success) {
+                        const score = calculateScore(data.data);
+                        scans.push({address: addr.trim(), score, data: data.data, success: true});
+                    } else {
+                        scans.push({address: addr.trim(), success: false, error: data.error});
+                    }
+                } catch (e) {
+                    scans.push({address: addr.trim(), success: false, error: e.message});
+                }
+            }
+            
+            results.innerHTML = '<div class="space-y-3">' + scans.map(scan => {
+                if (!scan.success) {
+                    return `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                        <p class="font-mono text-sm mb-1">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                        <p class="text-red-400 text-sm">Error: ${scan.error}</p>
+                    </div>`;
+                }
+                const verdict = scan.score >= 70 ? '✅ SAFE' : scan.score >= 40 ? '⚠️ RISKY' : '❌ AVOID';
+                const color = scan.score >= 70 ? 'emerald' : scan.score >= 40 ? 'yellow' : 'red';
+                return `<div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:bg-slate-700/50 transition-all">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <p class="font-mono text-sm mb-2">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                            <div class="flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-${color}-500/20 border border-${color}-500/30 text-${color}-400 rounded font-semibold">${verdict}</span>
+                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">Score: ${scan.score}</span>
+                            </div>
+                        </div>
+                        <button onclick="rescan('${scan.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                            View
+                        </button>
+                    </div>
+                </div>`;
+            }).join('') + '</div>';
+            
+            btn.disabled = false;
+            btn.textContent = '🔍 Scan All Tokens';
+        }
+
+        function calculateScore(token) {
+            const liqScore = token.liquidity < 5000 ? 0 : token.liquidity < 20000 ? 8 : token.liquidity < 50000 ? 15 : token.liquidity < 100000 ? 20 : 25;
+            const volRatio = token.volume24h / token.liquidity;
+            const volScore = volRatio < 0.1 ? 2 : volRatio < 0.3 ? 8 : volRatio < 0.5 ? 12 : volRatio < 1.0 ? 16 : 20;
+            const ageScore = token.ageHours < 1 ? 2 : token.ageHours < 6 ? 5 : token.ageHours < 24 ? 8 : token.ageHours < 72 ? 12 : 15;
+            const total = liqScore + volScore + ageScore + 30;
+            
+            const flags = [];
+            if (token.liquidity < 10000) flags.push('Low liquidity');
+            if (token.ageHours < 1) flags.push('Very new');
+            if (volRatio < 0.1) flags.push('Low volume');
+            
+            return flags.length > 0 ? Math.min(total, 40) : total;
+        }
+
         async function scanToken() {
             const input = document.getElementById('tokenInput').value.trim();
             if (!input) return;
@@ -314,7 +570,19 @@
                     throw new Error(data.error || 'Failed to fetch');
                 }
 
-                showResults(data.data, addr);
+                const score = calculateScore(data.data);
+                
+                // Add to history
+                scanHistory.unshift({
+                    address: addr,
+                    chain: data.data.chain,
+                    score: score,
+                    timestamp: Date.now()
+                });
+                if (scanHistory.length > 10) scanHistory.pop();
+                localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+
+                showResults(data.data, addr, score);
 
             } catch (e) {
                 err.textContent = 'Error: ' + e.message;
@@ -326,37 +594,38 @@
             }
         }
 
-        function showResults(token, addr) {
+        function showResults(token, addr, score) {
             const liqScore = token.liquidity < 5000 ? 0 : token.liquidity < 20000 ? 8 : token.liquidity < 50000 ? 15 : token.liquidity < 100000 ? 20 : 25;
             const volRatio = token.volume24h / token.liquidity;
             const volScore = volRatio < 0.1 ? 2 : volRatio < 0.3 ? 8 : volRatio < 0.5 ? 12 : volRatio < 1.0 ? 16 : 20;
             const ageScore = token.ageHours < 1 ? 2 : token.ageHours < 6 ? 5 : token.ageHours < 24 ? 8 : token.ageHours < 72 ? 12 : 15;
 
-            const total = liqScore + volScore + ageScore + 30;
             const flags = [];
             if (token.liquidity < 10000) flags.push('🚨 Low liquidity detected');
             if (token.ageHours < 1) flags.push('⚠️ Extremely new token');
             if (volRatio < 0.1) flags.push('📉 Low trading activity');
 
-            const score = flags.length > 0 ? Math.min(total, 40) : total;
             const verdict = score >= 70 ? {l: 'SAFE', e: '✅', c: 'emerald', t: 'Alpha Approved'} : score >= 40 ? {l: 'RISKY', e: '⚠️', c: 'yellow', t: 'Proceed with Caution'} : {l: 'AVOID', e: '❌', c: 'red', t: 'Red Flags Detected'};
+
+            // Generate AI insights
+            const insights = generateAIInsights(token, score, flags);
 
             const shortAddr = addr.slice(0,8) + '...' + addr.slice(-6);
             const explorerUrl = token.chain === 'solana' ? `https://solscan.io/token/${addr}` : `https://bscscan.com/token/${addr}`;
             const dexscreenerUrl = `https://dexscreener.com/${token.chain}/${addr}`;
 
             let html = `
-                <div class="card rounded-3xl p-8 mb-6">
+                <div class="card rounded-3xl p-6 md:p-8 mb-6">
                     <div class="flex justify-between items-start mb-8 flex-wrap gap-6">
                         <div class="flex-1 min-w-[200px]">
                             <p class="text-sm text-gray-400 mb-2">Token Address</p>
-                            <div class="flex items-center gap-2 mb-3">
-                                <p class="font-mono text-xl font-semibold">${shortAddr}</p>
+                            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                                <p class="font-mono text-base md:text-xl font-semibold">${shortAddr}</p>
                                 <button id="copyBtn" onclick="copyAddress()" class="bg-slate-700/50 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-1 text-xs transition-all">
                                     📋 Copy
                                 </button>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 flex-wrap">
                                 <span class="inline-block px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 text-xs font-semibold">
                                     ${token.chain.toUpperCase()}
                                 </span>
@@ -364,28 +633,44 @@
                                     🔗 Explorer
                                 </a>
                                 <a href="${dexscreenerUrl}" target="_blank" class="inline-block px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-xs font-semibold hover:bg-green-500/30 transition-all">
-                                    📊 DEXScreener
+                                    📊 Chart
                                 </a>
                             </div>
                         </div>
                         <div class="text-center">
                             <p class="text-sm text-gray-400 mb-3">Alpha Score</p>
-                            <p class="text-7xl font-bold glow-text">${score}</p>
+                            <p class="text-6xl md:text-7xl font-bold glow-text">${score}</p>
                             <div class="bg-${verdict.c}-500/20 border border-${verdict.c}-500/30 rounded-xl px-4 py-2 mt-4">
                                 <p class="text-2xl mb-1">${verdict.e}</p>
                                 <p class="text-${verdict.c}-400 font-bold text-lg">${verdict.l}</p>
                                 <p class="text-${verdict.c}-300 text-xs mt-1">${verdict.t}</p>
                             </div>
-                            <button onclick="shareResults(${score}, '${verdict.l}')" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
-                                🐦 Share Results
-                            </button>
+                            <div class="flex gap-2 mt-4 justify-center flex-wrap">
+                                <button onclick="shareResults(${score}, '${verdict.l}')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+                                    🐦 Share
+                                </button>
+                                <button onclick="addToWatchlist('${addr}', '${token.chain}', ${score})" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+                                    ⭐ Watch
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Insights -->
+                    <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-6 mb-6">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">🤖</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-blue-400 mb-2">AI Insights</p>
+                                <p class="text-sm text-gray-300 leading-relaxed">${insights}</p>
+                            </div>
                         </div>
                     </div>`;
 
             if (flags.length > 0) {
                 html += `<div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 mb-6">
                     <p class="font-bold text-red-400 mb-3 text-lg">⚠️ Alpha Sniff Warnings</p>
-                    <ul class="space-y-2">${flags.map(f => `<li class="text-red-300">${f}</li>`).join('')}</ul>
+                    <ul class="space-y-2">${flags.map(f => `<li class="text-red-300 text-sm md:text-base">${f}</li>`).join('')}</ul>
                 </div>`;
             }
 
@@ -421,59 +706,59 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">💵</span> Liquidity</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Total USD</span>
-                                <span class="font-bold text-emerald-400">$${token.liquidity.toLocaleString()}</span>
+                                <span class="text-gray-400 text-sm md:text-base">Total USD</span>
+                                <span class="font-bold text-emerald-400 text-sm md:text-base">${token.liquidity.toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Liq/MC Ratio</span>
-                                <span class="font-semibold">${(token.liquidity/token.marketCap).toFixed(4)}</span>
+                                <span class="text-gray-400 text-sm md:text-base">Liq/MC Ratio</span>
+                                <span class="font-semibold text-sm md:text-base">${(token.liquidity/token.marketCap).toFixed(4)}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">📈</span> Volume</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
-                                <span class="text-gray-400">24h Volume</span>
-                                <span class="font-bold text-blue-400">$${token.volume24h.toLocaleString()}</span>
+                                <span class="text-gray-400 text-sm md:text-base">24h Volume</span>
+                                <span class="font-bold text-blue-400 text-sm md:text-base">${token.volume24h.toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Vol/Liq Ratio</span>
-                                <span class="font-semibold">${volRatio.toFixed(2)}</span>
+                                <span class="text-gray-400 text-sm md:text-base">Vol/Liq Ratio</span>
+                                <span class="font-semibold text-sm md:text-base">${volRatio.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">⏰</span> Token Info</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Age</span>
-                                <span class="font-semibold text-purple-400">${token.ageHours < 24 ? token.ageHours + 'h' : Math.floor(token.ageHours/24) + 'd'}</span>
+                                <span class="text-gray-400 text-sm md:text-base">Age</span>
+                                <span class="font-semibold text-purple-400 text-sm md:text-base">${token.ageHours < 24 ? token.ageHours + 'h' : Math.floor(token.ageHours/24) + 'd'}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Price</span>
-                                <span class="font-semibold">$${token.priceUsd}</span>
+                                <span class="text-gray-400 text-sm md:text-base">Price</span>
+                                <span class="font-semibold text-sm md:text-base">${token.priceUsd}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="card rounded-2xl p-6 hover:transform hover:scale-105 transition-all">
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">💰</span> Market Cap</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
-                                <span class="text-gray-400">FDV</span>
-                                <span class="font-bold text-yellow-400">$${(token.marketCap/1000000).toFixed(2)}M</span>
+                                <span class="text-gray-400 text-sm md:text-base">FDV</span>
+                                <span class="font-bold text-yellow-400 text-sm md:text-base">${(token.marketCap/1000000).toFixed(2)}M</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="mt-6 text-center">
-                    <p class="text-gray-500 text-sm">
+                    <p class="text-gray-500 text-xs md:text-sm">
                         🐺 Sniffed by Alpha Sniff AI • Not financial advice
                     </p>
                 </div>
@@ -481,5 +766,18 @@
 
             document.getElementById('results').innerHTML = html;
         }
+
+        function generateAIInsights(token, score, flags) {
+            if (score >= 80) {
+                return `This token shows strong fundamentals with solid liquidity of ${(token.liquidity/1000).toFixed(1)}k and healthy trading volume. The ${token.ageHours < 24 ? 'relatively new' : 'established'} age combined with good metrics suggests a legitimate project. Always DYOR before investing.`;
+            } else if (score >= 60) {
+                return `Moderate risk profile detected. Liquidity is ${token.liquidity < 50000 ? 'lower than ideal' : 'acceptable'} at ${(token.liquidity/1000).toFixed(1)}k. The token is ${token.ageHours < 24 ? token.ageHours + ' hours old - still very fresh' : Math.floor(token.ageHours/24) + ' days old'}. Consider waiting for more trading history before investing.`;
+            } else if (score >= 40) {
+                return `⚠️ Proceed with extreme caution. ${flags.length} red flags detected including ${token.liquidity < 10000 ? 'low liquidity' : 'concerning metrics'}. This token shows risky characteristics. Only invest what you can afford to lose and always verify contract safety.`;
+            } else {
+                return `🚨 High risk detected! This token has multiple concerning indicators: ${token.liquidity < 5000 ? 'critically low liquidity' : 'poor fundamentals'}, ${token.ageHours < 1 ? 'brand new launch' : 'suspicious patterns'}. Strong recommendation to avoid unless you fully understand the risks. Potential rug pull warning.`;
+            }
+        }
     </script>
 </body>
+</html>
