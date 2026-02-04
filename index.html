@@ -45,9 +45,13 @@
         .btn-primary {
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
         }
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-1px);
             box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         .install-prompt {
             position: fixed;
@@ -90,6 +94,30 @@
         .tab-btn.active {
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             color: white;
+        }
+        .skeleton {
+            animation: skeleton-loading 1s linear infinite alternate;
+        }
+        @keyframes skeleton-loading {
+            0% { background-color: rgba(51, 65, 85, 0.4); }
+            100% { background-color: rgba(71, 85, 105, 0.4); }
+        }
+        .progress-ring {
+            transition: stroke-dashoffset 0.7s ease-out;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .warning-pulse {
+            animation: warningPulse 2s ease-in-out infinite;
+        }
+        @keyframes warningPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
     </style>
 </head>
@@ -199,7 +227,7 @@
                         type="text" 
                         id="tokenInput"
                         placeholder="Paste token address or DEXScreener link..."
-                        class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 md:py-4 px-4 md:px-5 text-white placeholder-gray-500 text-sm md:text-base"
+                        class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 md:py-4 px-4 md:px-5 text-white placeholder-gray-500 text-sm md:text-base focus:border-blue-500 focus:outline-none transition-colors"
                     >
                 </div>
 
@@ -235,7 +263,7 @@
             <div class="card rounded-3xl p-6 md:p-8">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl md:text-2xl font-bold">📊 Recent Scans</h2>
-                    <button onclick="clearHistory()" class="text-sm text-red-400 hover:text-red-300">Clear All</button>
+                    <button onclick="clearHistory()" class="text-sm text-red-400 hover:text-red-300 transition-colors">Clear All</button>
                 </div>
                 <div id="historyList"></div>
             </div>
@@ -258,7 +286,7 @@
                 <textarea 
                     id="batchInput"
                     placeholder="Paste token addresses (one per line)&#10;Example:&#10;EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&#10;JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
-                    class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-4 px-5 text-white placeholder-gray-500 mb-4 h-40 text-sm md:text-base"
+                    class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-4 px-5 text-white placeholder-gray-500 mb-4 h-40 text-sm md:text-base focus:border-blue-500 focus:outline-none transition-colors"
                 ></textarea>
                 
                 <button 
@@ -378,9 +406,9 @@
                 });
                 if (watchlist.length > 20) watchlist.pop();
                 localStorage.setItem('watchlist', JSON.stringify(watchlist));
-                alert('✅ Added to watchlist!');
+                showToast('✅ Added to watchlist!', 'success');
             } else {
-                alert('Already in watchlist!');
+                showToast('Already in watchlist!', 'info');
             }
         }
 
@@ -388,6 +416,26 @@
             watchlist = watchlist.filter(item => item.address !== address);
             localStorage.setItem('watchlist', JSON.stringify(watchlist));
             loadWatchlist();
+            showToast('Removed from watchlist', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-xl shadow-2xl z-50 fade-in`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         function loadHistory() {
@@ -457,6 +505,7 @@
                 scanHistory = [];
                 localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
                 loadHistory();
+                showToast('History cleared', 'info');
             }
         }
 
@@ -464,9 +513,12 @@
             const input = document.getElementById('batchInput').value.trim();
             const addresses = input.split('\n').filter(line => line.trim().length > 0);
             
-            if (addresses.length === 0) return;
+            if (addresses.length === 0) {
+                showToast('Please enter at least one address', 'warning');
+                return;
+            }
             if (addresses.length > 10) {
-                alert('Maximum 10 tokens at once');
+                showToast('Maximum 10 tokens at once', 'warning');
                 return;
             }
             
@@ -475,21 +527,24 @@
             
             btn.disabled = true;
             btn.textContent = `Scanning ${addresses.length} tokens...`;
-            results.innerHTML = '';
+            results.innerHTML = '<div class="text-center py-8"><div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div><p class="text-gray-400 mt-4">Analyzing tokens...</p></div>';
             
             const scans = [];
-            for (let addr of addresses) {
+            for (let i = 0; i < addresses.length; i++) {
+                const addr = addresses[i].trim();
+                btn.textContent = `Scanning ${i + 1}/${addresses.length}...`;
+                
                 try {
-                    const response = await fetch(API + '/api/scan/' + addr.trim());
+                    const response = await fetch(API + '/api/scan/' + addr);
                     const data = await response.json();
                     if (data.success) {
                         const score = calculateScore(data.data);
-                        scans.push({address: addr.trim(), score, data: data.data, success: true});
+                        scans.push({address: addr, score, data: data.data, success: true});
                     } else {
-                        scans.push({address: addr.trim(), success: false, error: data.error});
+                        scans.push({address: addr, success: false, error: data.error});
                     }
                 } catch (e) {
-                    scans.push({address: addr.trim(), success: false, error: e.message});
+                    scans.push({address: addr, success: false, error: e.message});
                 }
             }
             
@@ -520,26 +575,93 @@
             
             btn.disabled = false;
             btn.textContent = '🔍 Scan All Tokens';
+            showToast(`Scanned ${scans.length} tokens`, 'success');
         }
 
+        // IMPROVED SCORING ALGORITHM
         function calculateScore(token) {
-            const liqScore = token.liquidity < 5000 ? 0 : token.liquidity < 20000 ? 8 : token.liquidity < 50000 ? 15 : token.liquidity < 100000 ? 20 : 25;
-            const volRatio = token.volume24h / token.liquidity;
-            const volScore = volRatio < 0.1 ? 2 : volRatio < 0.3 ? 8 : volRatio < 0.5 ? 12 : volRatio < 1.0 ? 16 : 20;
-            const ageScore = token.ageHours < 1 ? 2 : token.ageHours < 6 ? 5 : token.ageHours < 24 ? 8 : token.ageHours < 72 ? 12 : 15;
-            const total = liqScore + volScore + ageScore + 30;
+            let totalScore = 0;
+            const breakdown = {
+                liquidity: 0,
+                volume: 0,
+                age: 0,
+                holder: 0,
+                contract: 0,
+                honeypot: 0
+            };
             
-            const flags = [];
-            if (token.liquidity < 10000) flags.push('Low liquidity');
-            if (token.ageHours < 1) flags.push('Very new');
-            if (volRatio < 0.1) flags.push('Low volume');
+            // 1. Liquidity Score (0-25 points)
+            if (token.liquidity < 5000) breakdown.liquidity = 0;
+            else if (token.liquidity < 20000) breakdown.liquidity = 8;
+            else if (token.liquidity < 50000) breakdown.liquidity = 15;
+            else if (token.liquidity < 100000) breakdown.liquidity = 20;
+            else breakdown.liquidity = 25;
             
-            return flags.length > 0 ? Math.min(total, 40) : total;
+            // 2. Volume Score (0-20 points)
+            const volRatio = token.volume24h / (token.liquidity || 1);
+            if (volRatio < 0.1) breakdown.volume = 2;
+            else if (volRatio < 0.3) breakdown.volume = 8;
+            else if (volRatio < 0.5) breakdown.volume = 12;
+            else if (volRatio < 1.0) breakdown.volume = 16;
+            else breakdown.volume = 20;
+            
+            // 3. Age Score (0-15 points)
+            if (token.ageHours < 1) breakdown.age = 2;
+            else if (token.ageHours < 6) breakdown.age = 5;
+            else if (token.ageHours < 24) breakdown.age = 8;
+            else if (token.ageHours < 72) breakdown.age = 12;
+            else breakdown.age = 15;
+            
+            // 4. Holder Distribution Score (0-20 points)
+            if (token.holderData && !token.holderData.error) {
+                if (token.holderData.topHolderPercent > 50) breakdown.holder = 2;
+                else if (token.holderData.topHolderPercent > 40) breakdown.holder = 5;
+                else if (token.holderData.topHolderPercent > 30) breakdown.holder = 10;
+                else if (token.holderData.topHolderPercent > 20) breakdown.holder = 15;
+                else breakdown.holder = 20;
+            } else {
+                breakdown.holder = 10; // Default if no data
+            }
+            
+            // 5. Contract Safety Score (0-15 points)
+            if (token.contractSafety && !token.contractSafety.error) {
+                if (token.chain === 'solana') {
+                    if (token.contractSafety.mintAuthorityRevoked) breakdown.contract += 8;
+                    if (token.contractSafety.freezeAuthorityDisabled) breakdown.contract += 7;
+                } else if (token.chain === 'bsc') {
+                    if (token.contractSafety.ownershipRenounced) breakdown.contract += 10;
+                    if (!token.contractSafety.canMint) breakdown.contract += 3;
+                    if (!token.contractSafety.hasPauseFunction) breakdown.contract += 2;
+                }
+            } else {
+                breakdown.contract = 7; // Default if no data
+            }
+            
+            // 6. Honeypot Check (BSC only, 0-5 bonus points)
+            if (token.honeypotCheck) {
+                if (!token.honeypotCheck.isHoneypot) {
+                    breakdown.honeypot = 5;
+                    if (token.honeypotCheck.sellTax > 10) breakdown.honeypot = 2;
+                    if (token.honeypotCheck.sellTax > 20) breakdown.honeypot = 0;
+                } else {
+                    breakdown.honeypot = -50; // Massive penalty for honeypots
+                }
+            }
+            
+            totalScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+            
+            // Cap score at 100
+            totalScore = Math.min(100, Math.max(0, totalScore));
+            
+            return totalScore;
         }
 
         async function scanToken() {
             const input = document.getElementById('tokenInput').value.trim();
-            if (!input) return;
+            if (!input) {
+                showToast('Please enter a token address', 'warning');
+                return;
+            }
 
             const btn = document.getElementById('scanBtn');
             const err = document.getElementById('error');
@@ -548,11 +670,21 @@
             const icon = document.getElementById('mainIcon');
 
             btn.disabled = true;
-            btn.innerHTML = '🔍 Sniffing...';
+            btn.innerHTML = '<div class="inline-block w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Sniffing...';
             icon.classList.add('sniffing-animation');
             err.classList.add('hidden');
-            res.innerHTML = '';
             init.classList.add('hidden');
+            
+            // Show loading skeleton
+            res.innerHTML = `
+                <div class="card rounded-3xl p-8 fade-in">
+                    <div class="space-y-4">
+                        <div class="skeleton h-8 rounded"></div>
+                        <div class="skeleton h-24 rounded"></div>
+                        <div class="skeleton h-32 rounded"></div>
+                    </div>
+                </div>
+            `;
 
             try {
                 let addr = input;
@@ -567,7 +699,7 @@
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Failed to fetch');
+                    throw new Error(data.error || 'Failed to fetch token data');
                 }
 
                 const score = calculateScore(data.data);
@@ -583,10 +715,14 @@
                 localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
 
                 showResults(data.data, addr, score);
+                showToast('Scan complete!', 'success');
 
             } catch (e) {
-                err.textContent = 'Error: ' + e.message;
+                err.textContent = '⚠️ ' + e.message;
                 err.classList.remove('hidden');
+                res.innerHTML = '';
+                init.classList.remove('hidden');
+                showToast('Scan failed: ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '🔍 Sniff This Token';
@@ -594,43 +730,49 @@
             }
         }
 
-        function showResults(token, addr, score) {
-            const liqScore = token.liquidity < 5000 ? 0 : token.liquidity < 20000 ? 8 : token.liquidity < 50000 ? 15 : token.liquidity < 100000 ? 20 : 25;
-            const volRatio = token.volume24h / token.liquidity;
-            const volScore = volRatio < 0.1 ? 2 : volRatio < 0.3 ? 8 : volRatio < 0.5 ? 12 : volRatio < 1.0 ? 16 : 20;
-            const ageScore = token.ageHours < 1 ? 2 : token.ageHours < 6 ? 5 : token.ageHours < 24 ? 8 : token.ageHours < 72 ? 12 : 15;
+        function createCircularProgress(percentage, size = 120) {
+            const radius = (size - 20) / 2;
+            const circumference = radius * 2 * Math.PI;
+            const offset = circumference - (percentage / 100) * circumference;
             
-            // Enhanced holder score with real data
-            let holderScore = 15; // Default if no data
-            if (token.holderData) {
-                if (token.holderData.topHolderPercent > 50) holderScore = 2;
-                else if (token.holderData.topHolderPercent > 40) holderScore = 5;
-                else if (token.holderData.topHolderPercent > 30) holderScore = 10;
-                else if (token.holderData.topHolderPercent > 20) holderScore = 15;
-                else holderScore = 20;
-            }
+            const color = percentage >= 70 ? '#10b981' : percentage >= 40 ? '#eab308' : '#ef4444';
             
-            // Enhanced contract safety score with real data
-            let contractScore = 15; // Default if no data
-            if (token.contractSafety) {
-                if (token.chain === 'solana') {
-                    contractScore = 0;
-                    if (token.contractSafety.mintAuthorityRevoked) contractScore += 10;
-                    if (token.contractSafety.freezeAuthorityDisabled) contractScore += 10;
-                } else if (token.chain === 'bsc') {
-                    contractScore = 0;
-                    if (token.contractSafety.ownershipRenounced) contractScore += 15;
-                    if (!token.contractSafety.canMint) contractScore += 5;
-                }
-            }
+            return `
+                <svg width="${size}" height="${size}" class="transform -rotate-90">
+                    <circle cx="${size/2}" cy="${size/2}" r="${radius}" stroke="rgba(255,255,255,0.1)" stroke-width="10" fill="none" />
+                    <circle 
+                        cx="${size/2}" cy="${size/2}" r="${radius}" 
+                        stroke="${color}" 
+                        stroke-width="10" 
+                        fill="none"
+                        stroke-dasharray="${circumference}"
+                        stroke-dashoffset="${offset}"
+                        class="progress-ring transition-all duration-700"
+                        stroke-linecap="round"
+                    />
+                    <text x="${size/2}" y="${size/2}" text-anchor="middle" dy=".3em" class="transform rotate-90" style="transform-origin: ${size/2}px ${size/2}px; font-size: 28px; font-weight: bold; fill: white;">
+                        ${Math.round(percentage)}
+                    </text>
+                </svg>
+            `;
+        }
 
+        function showResults(token, addr, score) {
             const flags = [];
+            
+            // Liquidity flags
             if (token.liquidity < 10000) flags.push('🚨 Low liquidity detected');
-            if (token.ageHours < 1) flags.push('⚠️ Extremely new token');
+            
+            // Age flags
+            if (token.ageHours < 1) flags.push('⚠️ Extremely new token (< 1 hour)');
+            else if (token.ageHours < 6) flags.push('⚠️ Very new token (< 6 hours)');
+            
+            // Volume flags
+            const volRatio = token.volume24h / (token.liquidity || 1);
             if (volRatio < 0.1) flags.push('📉 Low trading activity');
             
-            // Add holder-based flags
-            if (token.holderData) {
+            // Holder flags
+            if (token.holderData && !token.holderData.error) {
                 if (token.holderData.topHolderPercent > 40) {
                     flags.push(`🐋 Top holder owns ${token.holderData.topHolderPercent.toFixed(1)}% - Whale risk!`);
                 }
@@ -639,8 +781,8 @@
                 }
             }
             
-            // Add contract safety flags
-            if (token.contractSafety) {
+            // Contract safety flags
+            if (token.contractSafety && !token.contractSafety.error) {
                 if (token.chain === 'solana') {
                     if (!token.contractSafety.mintAuthorityRevoked) {
                         flags.push('⚠️ Mint authority NOT revoked - Can print unlimited tokens!');
@@ -652,26 +794,44 @@
                     if (!token.contractSafety.ownershipRenounced) {
                         flags.push('👤 Ownership NOT renounced - Dev has control!');
                     }
+                    if (token.contractSafety.hasPauseFunction) {
+                        flags.push('⏸️ Contract has pause function - Trading can be stopped!');
+                    }
                 }
             }
             
-            // Add rugcheck warnings
+            // Honeypot flags
+            if (token.honeypotCheck) {
+                if (token.honeypotCheck.isHoneypot) {
+                    flags.push('🚫 HONEYPOT DETECTED - Cannot sell!');
+                }
+                if (token.honeypotCheck.sellTax > 10) {
+                    flags.push(`💸 High sell tax: ${token.honeypotCheck.sellTax.toFixed(1)}%`);
+                }
+            }
+            
+            // Rugcheck flags
             if (token.rugcheckData && token.rugcheckData.risks && token.rugcheckData.risks.length > 0) {
                 flags.push(`🚩 Rugcheck: ${token.rugcheckData.risks.length} risk(s) detected`);
             }
 
-            const verdict = score >= 70 ? {l: 'SAFE', e: '✅', c: 'emerald', t: 'Alpha Approved'} : score >= 40 ? {l: 'RISKY', e: '⚠️', c: 'yellow', t: 'Proceed with Caution'} : {l: 'AVOID', e: '❌', c: 'red', t: 'Red Flags Detected'};
+            const verdict = score >= 70 ? 
+                {l: 'SAFE', e: '✅', c: 'emerald', t: 'Alpha Approved'} : 
+                score >= 40 ? 
+                {l: 'RISKY', e: '⚠️', c: 'yellow', t: 'Proceed with Caution'} : 
+                {l: 'AVOID', e: '❌', c: 'red', t: 'Red Flags Detected'};
 
-            // Generate AI insights
             const insights = generateAIInsights(token, score, flags);
-
             const shortAddr = addr.slice(0,8) + '...' + addr.slice(-6);
-            const explorerUrl = token.chain === 'solana' ? `https://solscan.io/token/${addr}` : `https://bscscan.com/token/${addr}`;
-            const dexscreenerUrl = `https://dexscreener.com/${token.chain}/${addr}`;
+            const explorerUrl = token.chain === 'solana' ? 
+                `https://solscan.io/token/${addr}` : 
+                `https://bscscan.com/token/${addr}`;
+            const dexscreenerUrl = token.url || `https://dexscreener.com/${token.chain}/${addr}`;
 
             let html = `
-                <div class="card rounded-3xl p-6 md:p-8 mb-6">
-                    <div class="flex justify-between items-start mb-8 flex-wrap gap-6">
+                <div class="card rounded-3xl p-6 md:p-8 mb-6 fade-in">
+                    <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
+                        <!-- Left: Token Info -->
                         <div class="flex-1 min-w-[200px]">
                             <p class="text-sm text-gray-400 mb-2">Token Address</p>
                             <div class="flex items-center gap-2 mb-3 flex-wrap">
@@ -684,6 +844,7 @@
                                 <span class="inline-block px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 text-xs font-semibold">
                                     ${token.chain.toUpperCase()}
                                 </span>
+                                ${token.dexId ? `<span class="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-xs font-semibold">${token.dexId}</span>` : ''}
                                 <a href="${explorerUrl}" target="_blank" class="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-xs font-semibold hover:bg-purple-500/30 transition-all">
                                     🔗 Explorer
                                 </a>
@@ -692,9 +853,11 @@
                                 </a>
                             </div>
                         </div>
+                        
+                        <!-- Right: Score Circle -->
                         <div class="text-center">
                             <p class="text-sm text-gray-400 mb-3">Alpha Score</p>
-                            <p class="text-6xl md:text-7xl font-bold glow-text">${score}</p>
+                            ${createCircularProgress(score)}
                             <div class="bg-${verdict.c}-500/20 border border-${verdict.c}-500/30 rounded-xl px-4 py-2 mt-4">
                                 <p class="text-2xl mb-1">${verdict.e}</p>
                                 <p class="text-${verdict.c}-400 font-bold text-lg">${verdict.l}</p>
@@ -722,56 +885,147 @@
                         </div>
                     </div>`;
 
+            // Warning flags
             if (flags.length > 0) {
-                html += `<div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 mb-6">
-                    <p class="font-bold text-red-400 mb-3 text-lg">⚠️ Alpha Sniff Warnings</p>
-                    <ul class="space-y-2">${flags.map(f => `<li class="text-red-300 text-sm md:text-base">${f}</li>`).join('')}</ul>
+                html += `<div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 mb-6 ${flags.length > 2 ? 'warning-pulse' : ''}">
+                    <p class="font-bold text-red-400 mb-3 text-lg">⚠️ Alpha Sniff Warnings (${flags.length})</p>
+                    <ul class="space-y-2">${flags.map(f => `<li class="text-red-300 text-sm md:text-base">• ${f}</li>`).join('')}</ul>
                 </div>`;
             }
 
-            html += `
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-sm text-gray-300">💧 Liquidity Health</span>
-                                <span class="text-sm font-bold">${liqScore}/25</span>
+            // Holder Distribution Visualization
+            if (token.holderData && !token.holderData.error) {
+                const topPercent = token.holderData.topHolderPercent || 0;
+                const top10Percent = token.holderData.top10HoldersPercent || 0;
+                const othersPercent = 100 - top10Percent;
+                
+                html += `
+                    <div class="card rounded-2xl p-6 mb-6">
+                        <h3 class="font-bold mb-4 text-lg">👥 Holder Distribution</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">Top Holder</span>
+                                    <span class="text-sm font-bold ${topPercent > 40 ? 'text-red-400' : topPercent > 20 ? 'text-yellow-400' : 'text-emerald-400'}">${topPercent.toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full ${topPercent > 40 ? 'bg-red-500' : topPercent > 20 ? 'bg-yellow-500' : 'bg-emerald-500'} transition-all duration-700" style="width: ${topPercent}%"></div>
+                                </div>
                             </div>
-                            <div class="w-full h-2 bg-slate-700 rounded-full">
-                                <div class="h-full bg-blue-500 rounded-full transition-all duration-700" style="width: ${(liqScore/25)*100}%"></div>
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">Top 10 Holders</span>
+                                    <span class="text-sm font-bold ${top10Percent > 70 ? 'text-red-400' : top10Percent > 50 ? 'text-yellow-400' : 'text-emerald-400'}">${top10Percent.toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full ${top10Percent > 70 ? 'bg-red-500' : top10Percent > 50 ? 'bg-yellow-500' : 'bg-emerald-500'} transition-all duration-700" style="width: ${top10Percent}%"></div>
+                                </div>
+                            </div>
+                            ${token.holderData.holderCount ? `
+                            <div class="text-center pt-2">
+                                <p class="text-gray-400 text-sm">Total Holders: <span class="text-white font-semibold">${token.holderData.holderCount}</span></p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Contract Safety Details
+            if (token.contractSafety && !token.contractSafety.error) {
+                html += `
+                    <div class="card rounded-2xl p-6 mb-6">
+                        <h3 class="font-bold mb-4 text-lg">🔒 Contract Safety</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                `;
+                
+                if (token.chain === 'solana') {
+                    html += `
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${token.contractSafety.mintAuthorityRevoked ? 'bg-emerald-500/10' : 'bg-red-500/10'}">
+                            <span class="text-2xl">${token.contractSafety.mintAuthorityRevoked ? '✅' : '❌'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Mint Authority</p>
+                                <p class="text-xs text-gray-400">${token.contractSafety.mintAuthorityRevoked ? 'Revoked' : 'Active (Risky!)'}</p>
                             </div>
                         </div>
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-sm text-gray-300">📊 Volume & Momentum</span>
-                                <span class="text-sm font-bold">${volScore}/20</span>
-                            </div>
-                            <div class="w-full h-2 bg-slate-700 rounded-full">
-                                <div class="h-full bg-purple-500 rounded-full transition-all duration-700" style="width: ${(volScore/20)*100}%"></div>
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${token.contractSafety.freezeAuthorityDisabled ? 'bg-emerald-500/10' : 'bg-red-500/10'}">
+                            <span class="text-2xl">${token.contractSafety.freezeAuthorityDisabled ? '✅' : '❌'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Freeze Authority</p>
+                                <p class="text-xs text-gray-400">${token.contractSafety.freezeAuthorityDisabled ? 'Disabled' : 'Active (Risky!)'}</p>
                             </div>
                         </div>
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-sm text-gray-300">🕐 Token Age</span>
-                                <span class="text-sm font-bold">${ageScore}/15</span>
+                    `;
+                } else {
+                    html += `
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${token.contractSafety.ownershipRenounced ? 'bg-emerald-500/10' : 'bg-red-500/10'}">
+                            <span class="text-2xl">${token.contractSafety.ownershipRenounced ? '✅' : '❌'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Ownership</p>
+                                <p class="text-xs text-gray-400">${token.contractSafety.ownershipRenounced ? 'Renounced' : 'Not Renounced'}</p>
                             </div>
-                            <div class="w-full h-2 bg-slate-700 rounded-full">
-                                <div class="h-full bg-cyan-500 rounded-full transition-all duration-700" style="width: ${(ageScore/15)*100}%"></div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${!token.contractSafety.hasPauseFunction ? 'bg-emerald-500/10' : 'bg-yellow-500/10'}">
+                            <span class="text-2xl">${!token.contractSafety.hasPauseFunction ? '✅' : '⚠️'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Pause Function</p>
+                                <p class="text-xs text-gray-400">${!token.contractSafety.hasPauseFunction ? 'None Found' : 'Present'}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `</div></div>`;
+            }
+
+            // Honeypot Check (BSC)
+            if (token.honeypotCheck) {
+                const isHoneypot = token.honeypotCheck.isHoneypot;
+                html += `
+                    <div class="card rounded-2xl p-6 mb-6 ${isHoneypot ? 'border-red-500' : ''}">
+                        <h3 class="font-bold mb-4 text-lg flex items-center gap-2">
+                            🍯 Honeypot Check
+                            ${isHoneypot ? '<span class="text-red-400 text-sm">(DANGER!)</span>' : '<span class="text-emerald-400 text-sm">(Clear)</span>'}
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="text-center p-3 rounded-lg ${isHoneypot ? 'bg-red-500/20' : 'bg-emerald-500/10'}">
+                                <p class="text-2xl mb-1">${isHoneypot ? '🚫' : '✅'}</p>
+                                <p class="text-xs text-gray-400">Honeypot</p>
+                                <p class="font-semibold text-sm">${isHoneypot ? 'YES' : 'NO'}</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg bg-slate-700/30">
+                                <p class="text-2xl mb-1">💰</p>
+                                <p class="text-xs text-gray-400">Buy Tax</p>
+                                <p class="font-semibold text-sm">${token.honeypotCheck.buyTax.toFixed(1)}%</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg ${token.honeypotCheck.sellTax > 10 ? 'bg-red-500/10' : 'bg-slate-700/30'}">
+                                <p class="text-2xl mb-1">💸</p>
+                                <p class="text-xs text-gray-400">Sell Tax</p>
+                                <p class="font-semibold text-sm ${token.honeypotCheck.sellTax > 10 ? 'text-red-400' : ''}">${token.honeypotCheck.sellTax.toFixed(1)}%</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg ${!token.honeypotCheck.canSell ? 'bg-red-500/20' : 'bg-emerald-500/10'}">
+                                <p class="text-2xl mb-1">${token.honeypotCheck.canSell ? '✅' : '❌'}</p>
+                                <p class="text-xs text-gray-400">Can Sell</p>
+                                <p class="font-semibold text-sm">${token.honeypotCheck.canSell ? 'YES' : 'NO'}</p>
                             </div>
                         </div>
                     </div>
-                </div>
+                `;
+            }
 
+            // Token Metrics
+            html += `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
                         <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">💵</span> Liquidity</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">Total USD</span>
-                                <span class="font-bold text-emerald-400 text-sm md:text-base">${token.liquidity.toLocaleString()}</span>
+                                <span class="font-bold text-emerald-400 text-sm md:text-base">$${token.liquidity.toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">Liq/MC Ratio</span>
-                                <span class="font-semibold text-sm md:text-base">${(token.liquidity/token.marketCap).toFixed(4)}</span>
+                                <span class="font-semibold text-sm md:text-base">${(token.liquidity/(token.marketCap || 1)).toFixed(4)}</span>
                             </div>
                         </div>
                     </div>
@@ -780,11 +1034,11 @@
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">24h Volume</span>
-                                <span class="font-bold text-blue-400 text-sm md:text-base">${token.volume24h.toLocaleString()}</span>
+                                <span class="font-bold text-blue-400 text-sm md:text-base">$${token.volume24h.toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">Vol/Liq Ratio</span>
-                                <span class="font-semibold text-sm md:text-base">${volRatio.toFixed(2)}</span>
+                                <span class="font-semibold text-sm md:text-base">${(token.volume24h/(token.liquidity || 1)).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
@@ -797,7 +1051,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">Price</span>
-                                <span class="font-semibold text-sm md:text-base">${token.priceUsd}</span>
+                                <span class="font-semibold text-sm md:text-base">$${token.priceUsd}</span>
                             </div>
                         </div>
                     </div>
@@ -806,7 +1060,13 @@
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">FDV</span>
-                                <span class="font-bold text-yellow-400 text-sm md:text-base">${(token.marketCap/1000000).toFixed(2)}M</span>
+                                <span class="font-bold text-yellow-400 text-sm md:text-base">$${(token.marketCap/1000000).toFixed(2)}M</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">24h Change</span>
+                                <span class="font-semibold text-sm md:text-base ${token.priceChange24h >= 0 ? 'text-emerald-400' : 'text-red-400'}">
+                                    ${token.priceChange24h >= 0 ? '+' : ''}${token.priceChange24h.toFixed(2)}%
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -814,7 +1074,7 @@
                 
                 <div class="mt-6 text-center">
                     <p class="text-gray-500 text-xs md:text-sm">
-                        🐺 Sniffed by Alpha Sniff AI • Not financial advice
+                        🐺 Sniffed by Alpha Sniff AI • Not financial advice • Always DYOR
                     </p>
                 </div>
             `;
@@ -823,14 +1083,18 @@
         }
 
         function generateAIInsights(token, score, flags) {
+            if (token.honeypotCheck?.isHoneypot) {
+                return `🚨 CRITICAL WARNING: This token has been identified as a HONEYPOT! You will NOT be able to sell this token. Do not invest under any circumstances. This is a scam designed to steal your money.`;
+            }
+            
             if (score >= 80) {
-                return `This token shows strong fundamentals with solid liquidity of ${(token.liquidity/1000).toFixed(1)}k and healthy trading volume. The ${token.ageHours < 24 ? 'relatively new' : 'established'} age combined with good metrics suggests a legitimate project. Always DYOR before investing.`;
+                return `This token demonstrates excellent fundamentals with robust liquidity of $${(token.liquidity/1000).toFixed(1)}k and strong trading volume. The ${token.ageHours < 24 ? 'recent launch' : 'established presence'} combined with ${flags.length === 0 ? 'no major red flags' : 'manageable risk factors'} suggests a legitimate project. However, always conduct thorough research before investing.`;
             } else if (score >= 60) {
-                return `Moderate risk profile detected. Liquidity is ${token.liquidity < 50000 ? 'lower than ideal' : 'acceptable'} at ${(token.liquidity/1000).toFixed(1)}k. The token is ${token.ageHours < 24 ? token.ageHours + ' hours old - still very fresh' : Math.floor(token.ageHours/24) + ' days old'}. Consider waiting for more trading history before investing.`;
+                return `Moderate risk profile detected. Liquidity is ${token.liquidity < 50000 ? 'lower than ideal' : 'acceptable'} at $${(token.liquidity/1000).toFixed(1)}k. The token is ${token.ageHours < 24 ? token.ageHours + ' hours old - still very fresh' : Math.floor(token.ageHours/24) + ' days old'}. ${flags.length > 0 ? `There are ${flags.length} warning sign(s) to consider.` : ''} Recommend waiting for more trading history and community validation before investing significant capital.`;
             } else if (score >= 40) {
-                return `⚠️ Proceed with extreme caution. ${flags.length} red flags detected including ${token.liquidity < 10000 ? 'low liquidity' : 'concerning metrics'}. This token shows risky characteristics. Only invest what you can afford to lose and always verify contract safety.`;
+                return `⚠️ Proceed with extreme caution. ${flags.length} red flag(s) detected including ${token.liquidity < 10000 ? 'critically low liquidity' : 'concerning metrics'}. ${token.holderData && token.holderData.topHolderPercent > 40 ? 'Whale concentration is dangerously high.' : ''} This token shows risky characteristics that could indicate a potential scam. Only invest what you can afford to lose completely, and always verify contract safety independently.`;
             } else {
-                return `🚨 High risk detected! This token has multiple concerning indicators: ${token.liquidity < 5000 ? 'critically low liquidity' : 'poor fundamentals'}, ${token.ageHours < 1 ? 'brand new launch' : 'suspicious patterns'}. Strong recommendation to avoid unless you fully understand the risks. Potential rug pull warning.`;
+                return `🚨 High risk detected! This token has multiple severe warning indicators: ${token.liquidity < 5000 ? 'critically insufficient liquidity' : 'poor fundamentals'}, ${token.ageHours < 1 ? 'just launched (< 1 hour)' : 'suspicious patterns'}. ${!token.contractSafety || token.contractSafety.error ? 'Unable to verify contract safety.' : 'Contract has concerning permissions.'} Strong recommendation to AVOID this token. High probability of rug pull or scam. Protect your capital.`;
             }
         }
     </script>
