@@ -584,10 +584,10 @@
             const breakdown = {
                 liquidity: 0,
                 volume: 0,
-                age: 0,
                 holder: 0,
                 contract: 0,
-                honeypot: 0
+                honeypot: 0,
+                social: 0
             };
             
             // 1. Liquidity Score (0-25 points)
@@ -605,12 +605,8 @@
             else if (volRatio < 1.0) breakdown.volume = 16;
             else breakdown.volume = 20;
             
-            // 3. Age Score (0-15 points)
-            if (token.ageHours < 1) breakdown.age = 2;
-            else if (token.ageHours < 6) breakdown.age = 5;
-            else if (token.ageHours < 24) breakdown.age = 8;
-            else if (token.ageHours < 72) breakdown.age = 12;
-            else breakdown.age = 15;
+            // 3. Age is NOT scored - displayed as info only
+            // New tokens aren't penalized, old scams don't get bonus points
             
             // 4. Holder Distribution Score (0-20 points)
             if (token.holderData && !token.holderData.error) {
@@ -623,18 +619,18 @@
                 breakdown.holder = 10; // Default if no data
             }
             
-            // 5. Contract Safety Score (0-15 points)
+            // 5. Contract Safety Score (0-20 points) - INCREASED from 15
             if (token.contractSafety && !token.contractSafety.error) {
                 if (token.chain === 'solana') {
-                    if (token.contractSafety.mintAuthorityRevoked) breakdown.contract += 8;
-                    if (token.contractSafety.freezeAuthorityDisabled) breakdown.contract += 7;
+                    if (token.contractSafety.mintAuthorityRevoked) breakdown.contract += 10;
+                    if (token.contractSafety.freezeAuthorityDisabled) breakdown.contract += 10;
                 } else if (token.chain === 'bsc') {
-                    if (token.contractSafety.ownershipRenounced) breakdown.contract += 10;
-                    if (!token.contractSafety.canMint) breakdown.contract += 3;
-                    if (!token.contractSafety.hasPauseFunction) breakdown.contract += 2;
+                    if (token.contractSafety.ownershipRenounced) breakdown.contract += 12;
+                    if (!token.contractSafety.canMint) breakdown.contract += 4;
+                    if (!token.contractSafety.hasPauseFunction) breakdown.contract += 4;
                 }
             } else {
-                breakdown.contract = 7; // Default if no data
+                breakdown.contract = 10; // Default if no data
             }
             
             // 6. Honeypot Check (BSC only, 0-5 bonus points)
@@ -775,9 +771,10 @@
             // Liquidity flags
             if (token.liquidity < 10000) flags.push('🚨 Low liquidity detected');
             
-            // Age flags
-            if (token.ageHours < 1) flags.push('⚠️ Extremely new token (< 1 hour)');
-            else if (token.ageHours < 6) flags.push('⚠️ Very new token (< 6 hours)');
+            // Age flags - WARNINGS ONLY, doesn't affect score
+            if (token.ageHours < 1) flags.push('⚠️ VERY NEW - Created less than 1 hour ago! Exercise extreme caution.');
+            else if (token.ageHours < 6) flags.push('⚠️ New token - Created less than 6 hours ago. Wait for more trading history.');
+            else if (token.ageHours < 24) flags.push('ℹ️ Recent launch - Less than 24 hours old.');
             
             // Volume flags
             const volRatio = token.volume24h / (token.liquidity || 1);
