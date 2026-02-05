@@ -830,9 +830,9 @@
             // Social flags
             if (token.socialInfo) {
                 if (token.socialInfo.socialCount === 0) {
-                    flags.push('📵 No social media presence - Major red flag!');
-                } else if (!token.socialInfo.hasTwitter && !token.socialInfo.hasTelegram) {
-                    flags.push('⚠️ Missing key social platforms (Twitter/Telegram)');
+                    flags.push('📵 No Twitter or Website - Major red flag!');
+                } else if (!token.socialInfo.hasTwitter) {
+                    flags.push('⚠️ Missing Twitter account - Unusual for crypto');
                 }
             }
 
@@ -1037,57 +1037,57 @@
             // Social Signals Panel
             if (token.socialInfo) {
                 const noSocials = token.socialInfo.socialCount === 0;
+                const hasTwitterOnly = token.socialInfo.hasTwitter && !token.socialInfo.hasWebsite;
+                const hasWebsiteOnly = !token.socialInfo.hasTwitter && token.socialInfo.hasWebsite;
+                const hasBoth = token.socialInfo.hasTwitter && token.socialInfo.hasWebsite;
+                
                 html += `
                     <div class="card rounded-2xl p-6 mb-6 ${noSocials ? 'border-red-500/30' : ''}">
                         <h3 class="font-bold mb-4 text-lg flex items-center gap-2">
                             📱 Social Presence
-                            ${noSocials ? '<span class="text-red-400 text-sm">(NO SOCIALS!)</span>' : token.socialInfo.socialScore >= 70 ? '<span class="text-emerald-400 text-sm">(Strong)</span>' : '<span class="text-yellow-400 text-sm">(Partial)</span>'}
+                            ${noSocials ? '<span class="text-red-400 text-sm">(NO SOCIALS!)</span>' : hasBoth ? '<span class="text-emerald-400 text-sm">(Complete)</span>' : '<span class="text-yellow-400 text-sm">(Partial)</span>'}
                         </h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                            <div class="text-center p-3 rounded-lg ${token.socialInfo.hasTwitter ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-slate-700/30'}">
-                                <p class="text-2xl mb-1">${token.socialInfo.hasTwitter ? '✅' : '❌'}</p>
-                                <p class="text-xs text-gray-400">Twitter</p>
-                                ${token.socialInfo.hasTwitter && token.socialInfo.twitterUrl ? `<a href="${token.socialInfo.twitterUrl}" target="_blank" class="text-xs text-blue-400 hover:underline mt-1 block">Visit</a>` : ''}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="text-center p-4 rounded-lg ${token.socialInfo.hasTwitter ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-slate-700/30'}">
+                                <p class="text-3xl mb-2">${token.socialInfo.hasTwitter ? '✅' : '❌'}</p>
+                                <p class="text-sm font-semibold text-gray-300 mb-1">Twitter</p>
+                                <p class="text-xs text-gray-500 mb-2">Essential for crypto</p>
+                                ${token.socialInfo.hasTwitter && token.socialInfo.twitterUrl ? `<a href="${token.socialInfo.twitterUrl}" target="_blank" class="text-xs text-blue-400 hover:underline font-semibold">Visit Profile →</a>` : '<span class="text-xs text-gray-600">Not found</span>'}
                             </div>
-                            <div class="text-center p-3 rounded-lg ${token.socialInfo.hasTelegram ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-slate-700/30'}">
-                                <p class="text-2xl mb-1">${token.socialInfo.hasTelegram ? '✅' : '❌'}</p>
-                                <p class="text-xs text-gray-400">Telegram</p>
-                                ${token.socialInfo.hasTelegram && token.socialInfo.telegramUrl ? `<a href="${token.socialInfo.telegramUrl}" target="_blank" class="text-xs text-blue-400 hover:underline mt-1 block">Join</a>` : ''}
-                            </div>
-                            <div class="text-center p-3 rounded-lg ${token.socialInfo.hasWebsite ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-slate-700/30'}">
-                                <p class="text-2xl mb-1">${token.socialInfo.hasWebsite ? '✅' : '❌'}</p>
-                                <p class="text-xs text-gray-400">Website</p>
-                                ${token.socialInfo.hasWebsite && token.socialInfo.websiteUrl ? `<a href="${token.socialInfo.websiteUrl}" target="_blank" class="text-xs text-purple-400 hover:underline mt-1 block">Visit</a>` : ''}
-                            </div>
-                            <div class="text-center p-3 rounded-lg ${token.socialInfo.hasDiscord ? 'bg-indigo-500/10 border border-indigo-500/30' : 'bg-slate-700/30'}">
-                                <p class="text-2xl mb-1">${token.socialInfo.hasDiscord ? '✅' : '❌'}</p>
-                                <p class="text-xs text-gray-400">Discord</p>
-                                ${token.socialInfo.hasDiscord && token.socialInfo.discordUrl ? `<a href="${token.socialInfo.discordUrl}" target="_blank" class="text-xs text-indigo-400 hover:underline mt-1 block">Join</a>` : ''}
+                            <div class="text-center p-4 rounded-lg ${token.socialInfo.hasWebsite ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-slate-700/30'}">
+                                <p class="text-3xl mb-2">${token.socialInfo.hasWebsite ? '✅' : '❌'}</p>
+                                <p class="text-sm font-semibold text-gray-300 mb-1">Website</p>
+                                <p class="text-xs text-gray-500 mb-2">Shows legitimacy</p>
+                                ${token.socialInfo.hasWebsite && token.socialInfo.websiteUrl ? `<a href="${token.socialInfo.websiteUrl}" target="_blank" class="text-xs text-purple-400 hover:underline font-semibold">Visit Site →</a>` : '<span class="text-xs text-gray-600">Not found</span>'}
                             </div>
                         </div>
                         
                         ${noSocials ? `
                             <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                                <p class="text-red-400 text-sm font-semibold">🚨 No social media presence detected!</p>
-                                <p class="text-red-300 text-xs mt-1">Legitimate projects have social channels. This is a major red flag.</p>
+                                <p class="text-red-400 text-sm font-semibold">🚨 No Twitter or Website detected!</p>
+                                <p class="text-red-300 text-xs mt-1">Legitimate crypto projects always have at least a Twitter account. This is a major red flag.</p>
                             </div>
                         ` : `
                             <div class="flex justify-between items-center mt-4">
                                 <div class="flex-1">
                                     <div class="flex justify-between mb-2">
                                         <span class="text-gray-400 text-sm">Social Score</span>
-                                        <span class="font-bold text-sm ${token.socialInfo.socialScore >= 70 ? 'text-emerald-400' : token.socialInfo.socialScore >= 40 ? 'text-yellow-400' : 'text-red-400'}">${token.socialInfo.socialScore}/100</span>
+                                        <span class="font-bold text-sm ${token.socialInfo.socialScore === 100 ? 'text-emerald-400' : token.socialInfo.socialScore >= 40 ? 'text-yellow-400' : 'text-red-400'}">${token.socialInfo.socialScore}/100</span>
                                     </div>
                                     <div class="w-full h-2 bg-slate-700 rounded-full">
-                                        <div class="h-full ${token.socialInfo.socialScore >= 70 ? 'bg-emerald-500' : token.socialInfo.socialScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'} rounded-full transition-all duration-700" style="width: ${token.socialInfo.socialScore}%"></div>
+                                        <div class="h-full ${token.socialInfo.socialScore === 100 ? 'bg-emerald-500' : token.socialInfo.socialScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'} rounded-full transition-all duration-700" style="width: ${token.socialInfo.socialScore}%"></div>
                                     </div>
                                 </div>
                             </div>
-                            ${token.socialInfo.socialCount < 2 ? `
+                            ${!hasBoth ? `
                                 <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mt-4">
-                                    <p class="text-yellow-400 text-xs">⚠️ Limited social presence - proceed with caution</p>
+                                    <p class="text-yellow-400 text-xs">⚠️ ${hasTwitterOnly ? 'Missing website - partial presence' : 'Missing Twitter - unusual for crypto projects'}</p>
                                 </div>
-                            ` : ''}
+                            ` : `
+                                <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 mt-4">
+                                    <p class="text-emerald-400 text-xs">✅ Has both Twitter and Website - good sign!</p>
+                                </div>
+                            `}
                         `}
                     </div>
                 `;
