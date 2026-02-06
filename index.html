@@ -1202,6 +1202,26 @@
         // DEEP SCAN FUNCTIONALITY
         // ========================================
         
+        // Switch between timeframes in trading patterns
+        function switchTimeframe(timeframe) {
+            // Hide all pattern data
+            document.querySelectorAll('.pattern-data').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Show selected timeframe
+            document.getElementById('pattern-' + timeframe).classList.remove('hidden');
+            
+            // Update tab styling
+            document.querySelectorAll('.timeframe-tab').forEach(btn => {
+                btn.classList.remove('active', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-500', 'text-white');
+                btn.classList.add('bg-slate-700/50', 'text-gray-300');
+            });
+            
+            document.getElementById('timeframe-' + timeframe).classList.add('active', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-500', 'text-white');
+            document.getElementById('timeframe-' + timeframe).classList.remove('bg-slate-700/50', 'text-gray-300');
+        }
+        
         async function runDeepScan(address, chain) {
             const btn = document.getElementById('deepScanBtn');
             const resultsDiv = document.getElementById('deepScanResults');
@@ -1351,55 +1371,86 @@
                 html += `</div>`;
             }
             
-            // 3. Transaction Patterns
+            // 3. Transaction Patterns with Timeframe Selector
             if (deepScan.transactionPatterns) {
                 const patterns = deepScan.transactionPatterns;
-                const buyPressure = patterns.buyPressure || 0;
-                const totalTxns = patterns.buys24h + patterns.sells24h;
                 
                 html += `
                     <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-                        <h4 class="font-bold mb-4 text-lg">📊 Trading Patterns (24h)</h4>
-                        <div class="grid grid-cols-3 gap-4 mb-4">
-                            <div class="text-center p-3 rounded-lg bg-emerald-500/10">
-                                <p class="text-3xl font-bold text-emerald-400">${patterns.buys24h}</p>
-                                <p class="text-xs text-gray-400 mt-1">Buys</p>
-                            </div>
-                            <div class="text-center p-3 rounded-lg bg-red-500/10">
-                                <p class="text-3xl font-bold text-red-400">${patterns.sells24h}</p>
-                                <p class="text-xs text-gray-400 mt-1">Sells</p>
-                            </div>
-                            <div class="text-center p-3 rounded-lg ${buyPressure >= 60 ? 'bg-emerald-500/10' : buyPressure >= 40 ? 'bg-yellow-500/10' : 'bg-red-500/10'}">
-                                <p class="text-3xl font-bold ${buyPressure >= 60 ? 'text-emerald-400' : buyPressure >= 40 ? 'text-yellow-400' : 'text-red-400'}">${buyPressure.toFixed(0)}%</p>
-                                <p class="text-xs text-gray-400 mt-1">Buy Pressure</p>
-                            </div>
+                        <h4 class="font-bold mb-4 text-lg">📊 Trading Patterns</h4>
+                        
+                        <!-- Timeframe Selector Tabs -->
+                        <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+                            <button onclick="switchTimeframe('m5')" id="timeframe-m5" class="timeframe-tab active px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                                5 Min
+                            </button>
+                            <button onclick="switchTimeframe('h1')" id="timeframe-h1" class="timeframe-tab px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700">
+                                1 Hour
+                            </button>
+                            <button onclick="switchTimeframe('h6')" id="timeframe-h6" class="timeframe-tab px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700">
+                                6 Hours
+                            </button>
+                            <button onclick="switchTimeframe('h24')" id="timeframe-h24" class="timeframe-tab px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700">
+                                24 Hours
+                            </button>
                         </div>
                         
-                        <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-emerald-500 to-red-500" style="width: 100%">
-                                <div class="h-full bg-emerald-500 transition-all duration-700" style="width: ${buyPressure}%"></div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between mt-2">
-                            <span class="text-xs text-gray-500">More Buys</span>
-                            <span class="text-xs text-gray-500">More Sells</span>
-                        </div>
-                        
-                        ${buyPressure >= 70 ? `
-                            <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 mt-4">
-                                <p class="text-emerald-400 text-sm">📈 Strong buy pressure! More people are buying than selling.</p>
-                            </div>
-                        ` : buyPressure >= 40 ? `
-                            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-4">
-                                <p class="text-yellow-400 text-sm">⚖️ Balanced buy/sell pressure. Watch for trend changes.</p>
-                            </div>
-                        ` : `
-                            <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
-                                <p class="text-red-400 text-sm">📉 Heavy sell pressure! More people are selling than buying.</p>
-                            </div>
-                        `}
-                        
-                        <p class="text-gray-500 text-xs mt-3 text-center">Total transactions: ${totalTxns}</p>
+                        <!-- Pattern Data Containers for each timeframe -->
+                        ${['m5', 'h1', 'h6', 'h24'].map(tf => {
+                            const data = patterns[tf];
+                            const buyPressure = data.buyPressure || 0;
+                            const totalTxns = data.buys + data.sells;
+                            const displayName = tf === 'm5' ? '5 Minutes' : tf === 'h1' ? '1 Hour' : tf === 'h6' ? '6 Hours' : '24 Hours';
+                            
+                            return `
+                                <div id="pattern-${tf}" class="pattern-data ${tf === 'm5' ? '' : 'hidden'}">
+                                    <div class="grid grid-cols-3 gap-4 mb-4">
+                                        <div class="text-center p-3 rounded-lg bg-emerald-500/10">
+                                            <p class="text-3xl font-bold text-emerald-400">${data.buys}</p>
+                                            <p class="text-xs text-gray-400 mt-1">Buys</p>
+                                        </div>
+                                        <div class="text-center p-3 rounded-lg bg-red-500/10">
+                                            <p class="text-3xl font-bold text-red-400">${data.sells}</p>
+                                            <p class="text-xs text-gray-400 mt-1">Sells</p>
+                                        </div>
+                                        <div class="text-center p-3 rounded-lg ${buyPressure >= 60 ? 'bg-emerald-500/10' : buyPressure >= 40 ? 'bg-yellow-500/10' : 'bg-red-500/10'}">
+                                            <p class="text-3xl font-bold ${buyPressure >= 60 ? 'text-emerald-400' : buyPressure >= 40 ? 'text-yellow-400' : 'text-red-400'}">${buyPressure.toFixed(0)}%</p>
+                                            <p class="text-xs text-gray-400 mt-1">Buy Pressure</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-emerald-500 to-red-500" style="width: 100%">
+                                            <div class="h-full bg-emerald-500 transition-all duration-700" style="width: ${buyPressure}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between mt-2">
+                                        <span class="text-xs text-gray-500">More Buys</span>
+                                        <span class="text-xs text-gray-500">More Sells</span>
+                                    </div>
+                                    
+                                    ${buyPressure >= 70 ? `
+                                        <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-emerald-400 text-sm">📈 Strong buy pressure in the last ${displayName}!</p>
+                                        </div>
+                                    ` : buyPressure >= 40 ? `
+                                        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-yellow-400 text-sm">⚖️ Balanced buy/sell pressure in the last ${displayName}.</p>
+                                        </div>
+                                    ` : totalTxns > 0 ? `
+                                        <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-red-400 text-sm">📉 Heavy sell pressure in the last ${displayName}!</p>
+                                        </div>
+                                    ` : `
+                                        <div class="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-gray-400 text-sm">No transactions in the last ${displayName}.</p>
+                                        </div>
+                                    `}
+                                    
+                                    <p class="text-gray-500 text-xs mt-3 text-center">Total transactions: ${totalTxns}</p>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
             }
