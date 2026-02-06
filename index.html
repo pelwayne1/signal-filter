@@ -909,7 +909,22 @@
                                 <p class="text-sm text-gray-300 leading-relaxed">${insights}</p>
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+
+                    <!-- Deep Scan Button -->
+                    <div class="text-center mb-6">
+                        <button 
+                            onclick="runDeepScan('${addr}', '${token.chain}')"
+                            id="deepScanBtn"
+                            class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all text-sm md:text-base hover:shadow-2xl">
+                            🔬 Run Deep Scan (Advanced Analysis)
+                        </button>
+                        <p class="text-gray-500 text-xs mt-2">Checks liquidity lock, fresh wallets & trading patterns</p>
+                    </div>
+
+                    <!-- Deep Scan Results (Initially Hidden) -->
+                    <div id="deepScanResults" class="hidden"></div>
+`;
 
             // Warning flags
             if (flags.length > 0) {
@@ -1181,6 +1196,224 @@
             } else {
                 return `🚨 High risk detected! This token has multiple severe warning indicators: ${token.liquidity < 5000 ? 'critically insufficient liquidity' : 'poor fundamentals'}, ${token.ageHours < 1 ? 'just launched (< 1 hour)' : 'suspicious patterns'}. ${!token.contractSafety || token.contractSafety.error ? 'Unable to verify contract safety.' : 'Contract has concerning permissions.'} Strong recommendation to AVOID this token. High probability of rug pull or scam. Protect your capital.`;
             }
+        }
+        
+        // ========================================
+        // DEEP SCAN FUNCTIONALITY
+        // ========================================
+        
+        async function runDeepScan(address, chain) {
+            const btn = document.getElementById('deepScanBtn');
+            const resultsDiv = document.getElementById('deepScanResults');
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<div class="inline-block w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Running Deep Scan...';
+            
+            // Show loading skeleton
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.innerHTML = `
+                <div class="card rounded-3xl p-6 mb-6 border-2 border-purple-500/50 fade-in">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        🔬 Deep Scan Results
+                        <span class="text-sm font-normal text-gray-400">(Advanced Analysis)</span>
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="skeleton h-24 rounded"></div>
+                        <div class="skeleton h-32 rounded"></div>
+                        <div class="skeleton h-24 rounded"></div>
+                    </div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(API + '/api/deepscan/' + address);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Deep scan failed');
+                }
+                
+                displayDeepScanResults(data.data);
+                showToast('Deep scan complete!', 'success');
+                
+            } catch (e) {
+                resultsDiv.innerHTML = `
+                    <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-6 mb-6">
+                        <p class="text-red-400 font-semibold">❌ Deep Scan Failed</p>
+                        <p class="text-red-300 text-sm mt-2">${e.message}</p>
+                    </div>
+                `;
+                showToast('Deep scan failed: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔬 Run Deep Scan (Advanced Analysis)';
+            }
+        }
+        
+        function displayDeepScanResults(deepScan) {
+            const resultsDiv = document.getElementById('deepScanResults');
+            
+            let html = `
+                <div class="card rounded-3xl p-6 mb-6 border-2 border-purple-500/50 fade-in">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        🔬 Deep Scan Results
+                        <span class="text-sm font-normal text-gray-400">(Advanced Analysis)</span>
+                    </h3>
+            `;
+            
+            // 1. Liquidity Lock
+            if (deepScan.liquidityLock) {
+                const lock = deepScan.liquidityLock;
+                html += `
+                    <div class="bg-slate-800/50 rounded-xl p-5 mb-4 border ${lock.isLocked ? 'border-emerald-500/30' : 'border-red-500/30'}">
+                        <h4 class="font-bold mb-4 flex items-center gap-2 text-lg">
+                            🔒 Liquidity Lock Check
+                            ${lock.isLocked ? '<span class="text-emerald-400 text-sm">(LOCKED)</span>' : '<span class="text-red-400 text-sm">(NOT LOCKED)</span>'}
+                        </h4>
+                        ${lock.isLocked ? `
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Status</span>
+                                    <span class="text-emerald-400 font-semibold flex items-center gap-2">
+                                        ✅ Liquidity is locked
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Locker</span>
+                                    <span class="text-white font-semibold">${lock.lockerName || 'Unknown'}</span>
+                                </div>
+                                <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 mt-3">
+                                    <p class="text-emerald-400 text-sm">✅ This is a positive sign! Locked liquidity means the team cannot easily rug pull.</p>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                                <p class="text-red-400 font-semibold mb-2">🚨 No liquidity lock detected</p>
+                                <p class="text-red-300 text-sm">The team can remove liquidity at any time. This is a major red flag and rug pull risk!</p>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+            
+            // 2. Top Holder Analysis
+            if (deepScan.holderAnalysis) {
+                const analysis = deepScan.holderAnalysis;
+                
+                html += `
+                    <div class="bg-slate-800/50 rounded-xl p-5 mb-4 border ${analysis.freshWalletCount > 3 ? 'border-yellow-500/30' : 'border-slate-700'}">
+                        <h4 class="font-bold mb-4 flex items-center gap-2 text-lg">
+                            👥 Top Holder Analysis
+                            ${analysis.freshWalletCount > 0 ? `<span class="text-yellow-400 text-sm">(${analysis.freshWalletCount} fresh wallets)</span>` : '<span class="text-emerald-400 text-sm">(All aged wallets)</span>'}
+                        </h4>
+                `;
+                
+                if (analysis.note) {
+                    html += `<p class="text-gray-400 text-sm mb-4 italic">${analysis.note}</p>`;
+                }
+                
+                if (analysis.topHolders && analysis.topHolders.length > 0) {
+                    html += `
+                        <div class="space-y-2 mb-4">
+                            ${analysis.topHolders.slice(0, 10).map(holder => `
+                                <div class="flex justify-between items-center p-2 rounded ${holder.isFresh ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-slate-700/30'}">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-gray-500 text-sm font-mono">#${holder.rank}</span>
+                                        <span class="font-mono text-xs">${holder.address}</span>
+                                        ${holder.isFresh ? '<span class="text-yellow-400 text-xs px-2 py-1 bg-yellow-500/20 rounded">🆕 Fresh</span>' : ''}
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="font-semibold">${holder.percentage}%</span>
+                                        <span class="text-xs text-gray-500 block">${holder.ageHours}h old</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    
+                    if (analysis.freshWalletCount > 0) {
+                        html += `
+                            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                                <p class="text-yellow-400 font-semibold mb-2">⚠️ ${analysis.freshWalletCount} fresh wallet(s) detected in top 10!</p>
+                                <p class="text-yellow-300 text-sm">Fresh wallets (< 24h old) in top holders could be sniper bots, team wallets, or coordinated buyers. Exercise caution.</p>
+                            </div>
+                        `;
+                    } else if (analysis.topHolders.length > 0) {
+                        html += `
+                            <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
+                                <p class="text-emerald-400 text-sm">✅ All top holders have aged wallets - good sign!</p>
+                            </div>
+                        `;
+                    }
+                }
+                
+                html += `</div>`;
+            }
+            
+            // 3. Transaction Patterns
+            if (deepScan.transactionPatterns) {
+                const patterns = deepScan.transactionPatterns;
+                const buyPressure = patterns.buyPressure || 0;
+                const totalTxns = patterns.buys24h + patterns.sells24h;
+                
+                html += `
+                    <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+                        <h4 class="font-bold mb-4 text-lg">📊 Trading Patterns (24h)</h4>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div class="text-center p-3 rounded-lg bg-emerald-500/10">
+                                <p class="text-3xl font-bold text-emerald-400">${patterns.buys24h}</p>
+                                <p class="text-xs text-gray-400 mt-1">Buys</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg bg-red-500/10">
+                                <p class="text-3xl font-bold text-red-400">${patterns.sells24h}</p>
+                                <p class="text-xs text-gray-400 mt-1">Sells</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg ${buyPressure >= 60 ? 'bg-emerald-500/10' : buyPressure >= 40 ? 'bg-yellow-500/10' : 'bg-red-500/10'}">
+                                <p class="text-3xl font-bold ${buyPressure >= 60 ? 'text-emerald-400' : buyPressure >= 40 ? 'text-yellow-400' : 'text-red-400'}">${buyPressure.toFixed(0)}%</p>
+                                <p class="text-xs text-gray-400 mt-1">Buy Pressure</p>
+                            </div>
+                        </div>
+                        
+                        <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-emerald-500 to-red-500" style="width: 100%">
+                                <div class="h-full bg-emerald-500 transition-all duration-700" style="width: ${buyPressure}%"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-2">
+                            <span class="text-xs text-gray-500">More Buys</span>
+                            <span class="text-xs text-gray-500">More Sells</span>
+                        </div>
+                        
+                        ${buyPressure >= 70 ? `
+                            <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 mt-4">
+                                <p class="text-emerald-400 text-sm">📈 Strong buy pressure! More people are buying than selling.</p>
+                            </div>
+                        ` : buyPressure >= 40 ? `
+                            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-4">
+                                <p class="text-yellow-400 text-sm">⚖️ Balanced buy/sell pressure. Watch for trend changes.</p>
+                            </div>
+                        ` : `
+                            <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
+                                <p class="text-red-400 text-sm">📉 Heavy sell pressure! More people are selling than buying.</p>
+                            </div>
+                        `}
+                        
+                        <p class="text-gray-500 text-xs mt-3 text-center">Total transactions: ${totalTxns}</p>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div class="mt-6 text-center">
+                        <p class="text-gray-500 text-xs">
+                            🔬 Deep scan complete • Data refreshes on each scan
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
         }
     </script>
 </body>
