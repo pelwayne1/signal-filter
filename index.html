@@ -14,6 +14,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
@@ -896,6 +897,9 @@
                                 <button onclick="addToWatchlist('${addr}', '${token.chain}', ${score})" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
                                     ⭐ Watch
                                 </button>
+                                <button onclick="exportAsImage()" class="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+                                    📸 Export
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1195,6 +1199,71 @@
                 return `⚠️ Proceed with extreme caution. ${flags.length} red flag(s) detected including ${token.liquidity < 10000 ? 'critically low liquidity' : 'concerning metrics'}. ${token.holderData && token.holderData.topHolderPercent > 40 ? 'Whale concentration is dangerously high.' : ''} This token shows risky characteristics that could indicate a potential scam. Only invest what you can afford to lose completely, and always verify contract safety independently.`;
             } else {
                 return `🚨 High risk detected! This token has multiple severe warning indicators: ${token.liquidity < 5000 ? 'critically insufficient liquidity' : 'poor fundamentals'}, ${token.ageHours < 1 ? 'just launched (< 1 hour)' : 'suspicious patterns'}. ${!token.contractSafety || token.contractSafety.error ? 'Unable to verify contract safety.' : 'Contract has concerning permissions.'} Strong recommendation to AVOID this token. High probability of rug pull or scam. Protect your capital.`;
+            }
+        }
+        
+        // ========================================
+        // EXPORT AS IMAGE FUNCTIONALITY
+        // ========================================
+        
+        async function exportAsImage() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!resultsDiv.innerHTML.trim()) {
+                showToast('No scan results to export!', 'warning');
+                return;
+            }
+            
+            showToast('Generating image...', 'info');
+            
+            try {
+                // Use html2canvas to capture the results div
+                const canvas = await html2canvas(resultsDiv, {
+                    backgroundColor: '#0a0e17',
+                    scale: 2, // Higher quality
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                // Convert to blob
+                canvas.toBlob(async (blob) => {
+                    const fileName = `alphasniff-scan-${Date.now()}.png`;
+                    
+                    // Check if Web Share API is available (mobile)
+                    if (navigator.share && navigator.canShare) {
+                        try {
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            if (navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'AlphaSniff AI Scan Results',
+                                    text: 'Check out this token scan from AlphaSniff AI!'
+                                });
+                                showToast('Shared successfully!', 'success');
+                                return;
+                            }
+                        } catch (e) {
+                            if (e.name === 'AbortError') return; // User cancelled
+                        }
+                    }
+                    
+                    // Fallback: Download
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('Image downloaded!', 'success');
+                    
+                }, 'image/png');
+                
+            } catch (e) {
+                console.error('Export failed:', e);
+                showToast('Failed to export image: ' + e.message, 'error');
             }
         }
         
