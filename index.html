@@ -1606,7 +1606,12 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            event.target.classList.add('active');
+            // Find and activate the clicked tab
+            const clickedTab = Array.from(document.querySelectorAll('.tab')).find(tab => 
+                tab.textContent.toLowerCase().includes(tabName)
+            );
+            if (clickedTab) clickedTab.classList.add('active');
+            
             document.getElementById(tabName).classList.add('active');
 
             if (tabName === 'history') loadHistory();
@@ -1682,6 +1687,11 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
 
                 if (data.error) {
                     throw new Error(data.error);
+                }
+
+                // Make sure chain is set
+                if (!data.chain) {
+                    data.chain = currentBlockchain;
                 }
 
                 currentTokenData = data;
