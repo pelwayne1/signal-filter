@@ -1112,151 +1112,6 @@
             margin: 30px 0;
         }
 
-        /* Portfolio Styles */
-        .portfolio-item {
-            background: var(--bg-card);
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            transition: all 0.3s ease;
-        }
-
-        .portfolio-item:hover {
-            border-color: var(--accent-primary);
-            transform: translateY(-2px);
-        }
-
-        .portfolio-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .portfolio-token-info {
-            flex: 1;
-        }
-
-        .portfolio-token-name {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 5px;
-        }
-
-        .portfolio-token-chain {
-            font-size: 0.85em;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
-
-        .portfolio-value {
-            text-align: right;
-        }
-
-        .portfolio-usd-value {
-            font-size: 1.8em;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .portfolio-change {
-            font-size: 0.9em;
-            font-weight: 600;
-            margin-top: 5px;
-        }
-
-        .portfolio-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--border);
-        }
-
-        .portfolio-detail-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .portfolio-detail-label {
-            font-size: 0.85em;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-        }
-
-        .portfolio-detail-value {
-            font-size: 1.1em;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .portfolio-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .portfolio-btn {
-            flex: 1;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .edit-portfolio-btn {
-            background: var(--accent-primary);
-            color: white;
-        }
-
-        .remove-portfolio-btn {
-            background: var(--danger);
-            color: white;
-        }
-
-        .portfolio-breakdown {
-            margin-top: 30px;
-            padding: 25px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-            border-radius: 15px;
-            border: 1px solid rgba(102, 126, 234, 0.2);
-        }
-
-        .breakdown-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .breakdown-item:last-child {
-            border-bottom: none;
-        }
-
-        .breakdown-bar {
-            width: 100%;
-            height: 6px;
-            background: var(--bg-primary);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .breakdown-fill {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.5s ease;
-        }
-
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -1345,7 +1200,6 @@
 
         <div class="tabs">
             <button class="tab active" onclick="switchTab('scanner')">🔍 Scanner</button>
-            <button class="tab" onclick="switchTab('portfolio')">💼 Portfolio</button>
             <button class="tab" onclick="switchTab('history')">📜 History</button>
             <button class="tab" onclick="switchTab('watchlist')">⭐ Watchlist</button>
             <button class="tab" onclick="switchTab('compare')">⚖️ Compare</button>
@@ -1379,49 +1233,6 @@
             </div>
 
             <div id="results" class="results hidden"></div>
-        </div>
-
-        <!-- Portfolio Tab -->
-        <div id="portfolio" class="tab-content">
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h2>💼 My Portfolio</h2>
-                    <div id="totalPortfolioValue" style="font-size: 2em; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                        $0.00
-                    </div>
-                </div>
-
-                <!-- Add Token Form -->
-                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 25px; border-radius: 15px; margin-bottom: 25px; border: 1px solid rgba(102, 126, 234, 0.2);">
-                    <h3 style="margin-bottom: 20px;">➕ Add Token to Portfolio</h3>
-                    
-                    <div class="blockchain-selector" style="margin-bottom: 15px;">
-                        <button class="blockchain-btn active" id="portfolio-sol-btn" onclick="selectPortfolioBlockchain('solana')">
-                            ☀️ Solana
-                        </button>
-                        <button class="blockchain-btn" id="portfolio-bsc-btn" onclick="selectPortfolioBlockchain('bsc')">
-                            💎 BSC
-                        </button>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="portfolioTokenAddress">Token Address</label>
-                        <input type="text" id="portfolioTokenAddress" placeholder="Enter token address...">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="portfolioAmount">Amount You Own</label>
-                        <input type="number" id="portfolioAmount" step="0.000001" placeholder="e.g., 1000">
-                    </div>
-
-                    <button class="btn" onclick="addToPortfolio()">💼 Add to Portfolio</button>
-                </div>
-
-                <!-- Portfolio Holdings -->
-                <div id="portfolioHoldings">
-                    <p style="color: var(--text-secondary); text-align: center;">No tokens in portfolio yet. Add your first holding above! 👆</p>
-                </div>
-            </div>
         </div>
 
         <!-- History Tab -->
@@ -1510,10 +1321,8 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
         // Global state
         let currentBlockchain = 'solana';
         let currentBatchBlockchain = 'solana';
-        let currentPortfolioBlockchain = 'solana';
         let currentTokenData = null;
         let priceCheckInterval = null;
-        let portfolioPriceInterval = null;
         let selectedForComparison = [];
         let comparisonData = {};
 
@@ -1524,10 +1333,8 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
             loadThemePreferences();
             loadHistory();
             loadWatchlist();
-            loadPortfolio();
             requestNotificationPermission();
             startPriceMonitoring();
-            startPortfolioPriceMonitoring();
             loadCompareOptions();
         });
 
@@ -1611,7 +1418,6 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
 
             if (tabName === 'history') loadHistory();
             if (tabName === 'watchlist') loadWatchlist();
-            if (tabName === 'portfolio') loadPortfolio();
             if (tabName === 'compare') loadCompareOptions();
         }
 
@@ -1677,53 +1483,27 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
             resultsDiv.innerHTML = '<div class="card"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
 
             try {
-                const url = `${BACKEND_URL}/api/scan/${address}?chain=${currentBlockchain}`;
-                console.log('🔍 Scanning:', url);
-                
-                const response = await fetch(url);
+                const response = await fetch(`${BACKEND_URL}/api/scan/${address}?chain=${currentBlockchain}`);
                 const data = await response.json();
-                
-                console.log('📦 Backend response:', data);
 
                 if (data.error) {
                     throw new Error(data.error);
                 }
 
-                // Check if we got valid data
-                if (!data.name && !data.symbol && !data.priceUsd) {
-                    console.warn('⚠️ No token data returned');
-                    throw new Error('No token data found. Token may be too new or not listed.');
-                }
-
                 currentTokenData = data;
-                currentTokenData.chain = currentBlockchain; // Force set chain
-                
                 const score = calculateScore(data);
-                console.log('✅ Score:', score);
-                
                 displayResults(data, score);
                 saveToHistory(address, currentBlockchain, score, data);
                 
                 showToast('✅ Scan complete!');
             } catch (error) {
-                console.error('❌ Scan error:', error);
                 resultsDiv.innerHTML = `
                     <div class="card">
                         <div class="warning-flag">
                             <strong>❌ Error:</strong> ${error.message}
                         </div>
-                        <div class="info-flag" style="margin-top: 15px;">
-                            <strong>💡 Troubleshooting:</strong><br>
-                            • Check the console (F12) for detailed errors<br>
-                            • Token may be too new (just launched)<br>
-                            • Token might not be on DexScreener yet<br>
-                            • Try a known token like USDC or Jupiter
-                        </div>
                     </div>
                 `;
-                showToast('❌ Scan failed');
-            }
-        }
                 showToast('❌ Scan failed');
             }
         }
@@ -1832,22 +1612,11 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
             
             const isFavorited = checkIfFavorited(data.address, data.chain);
 
-            // Ensure data has required fields with fallbacks
-            const tokenName = data.name || 'Unknown Token';
-            const tokenSymbol = data.symbol || 'N/A';
-            const tokenChain = (data.chain || currentBlockchain).toUpperCase();
-            const liquidity = parseFloat(data.liquidity) || 0;
-            const volume24h = parseFloat(data.volume24h) || 0;
-            const priceUsd = parseFloat(data.priceUsd) || 0;
-            const marketCap = parseFloat(data.marketCap) || 0;
-            const ageHours = parseFloat(data.ageHours) || 0;
-            const totalHolders = data.holderData?.totalHolders || 0;
-
             let html = `
                 <div class="card">
                     <div class="token-header">
-                        <div class="token-name">${tokenName}</div>
-                        <div class="token-symbol">${tokenSymbol} • ${tokenChain}</div>
+                        <div class="token-name">${data.name || 'Unknown Token'}</div>
+                        <div class="token-symbol">${data.symbol || 'N/A'} • ${data.chain.toUpperCase()}</div>
                         <div class="token-address">
                             ${data.address}
                             <button class="copy-btn" onclick="copyAddress('${data.address}')">📋 Copy</button>
@@ -1869,7 +1638,7 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
                         </button>
                     </div>
 
-                    <button class="btn deep-scan-btn" onclick="runDeepScan('${data.address}', '${data.chain || currentBlockchain}')">
+                    <button class="btn deep-scan-btn" onclick="runDeepScan('${data.address}', '${data.chain}')">
                         🔬 Run Deep Scan
                     </button>
 
@@ -1890,7 +1659,7 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
                 ${generateHolderDistribution(data)}
                 ${generateContractSafety(data)}
                 ${generateSocialSignals(data)}
-                ${data.honeypotCheck && (data.chain || currentBlockchain) === 'bsc' ? generateHoneypotCheck(data.honeypotCheck) : ''}
+                ${data.honeypotCheck && data.chain === 'bsc' ? generateHoneypotCheck(data.honeypotCheck) : ''}
             `;
 
             document.getElementById('results').innerHTML = html;
@@ -2011,50 +1780,33 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
         }
 
         function generateMetrics(data) {
-            const liquidity = parseFloat(data.liquidity) || 0;
-            const volume24h = parseFloat(data.volume24h) || 0;
-            const priceUsd = parseFloat(data.priceUsd) || 0;
-            const marketCap = parseFloat(data.marketCap) || 0;
-            const ageHours = parseFloat(data.ageHours) || 0;
-            const totalHolders = data.holderData?.totalHolders || 0;
-
-            const hasNoData = liquidity === 0 && volume24h === 0 && priceUsd === 0;
-
             return `
                 <div class="card">
                     <h3 style="margin-bottom: 20px;">📈 Token Metrics</h3>
-                    
-                    ${hasNoData ? `
-                        <div class="warning-flag" style="margin-bottom: 20px;">
-                            <strong>⚠️ Limited Data Available</strong><br>
-                            This token may be too new or not listed on major DEXs yet. Data might be incomplete or unavailable.
-                        </div>
-                    ` : ''}
-                    
                     <div class="metrics-grid">
                         <div class="metric-card">
                             <div class="metric-label">💧 Liquidity</div>
-                            <div class="metric-value">$${formatNumber(liquidity)}</div>
+                            <div class="metric-value">$${formatNumber(data.liquidity)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">📊 24h Volume</div>
-                            <div class="metric-value">$${formatNumber(volume24h)}</div>
+                            <div class="metric-value">$${formatNumber(data.volume24h)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">💰 Price</div>
-                            <div class="metric-value">${priceUsd > 0 ? '$' + priceUsd.toFixed(8) : 'N/A'}</div>
+                            <div class="metric-value">$${parseFloat(data.priceUsd).toFixed(8)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">📊 Market Cap</div>
-                            <div class="metric-value">$${formatNumber(marketCap)}</div>
+                            <div class="metric-value">$${formatNumber(data.marketCap)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">⏰ Token Age</div>
-                            <div class="metric-value">${formatAge(ageHours)}</div>
+                            <div class="metric-value">${formatAge(data.ageHours)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">👥 Holders</div>
-                            <div class="metric-value">${formatNumber(totalHolders)}</div>
+                            <div class="metric-value">${formatNumber(data.holderData?.totalHolders || 0)}</div>
                         </div>
                     </div>
                 </div>
@@ -2978,255 +2730,6 @@ Analyze your tokens at alphasniffai.com
                     </div>
                 `;
             }).join('');
-        }
-
-        // PORTFOLIO FUNCTIONS
-        function selectPortfolioBlockchain(chain) {
-            currentPortfolioBlockchain = chain;
-            document.getElementById('portfolio-sol-btn').classList.toggle('active', chain === 'solana');
-            document.getElementById('portfolio-bsc-btn').classList.toggle('active', chain === 'bsc');
-        }
-
-        async function addToPortfolio() {
-            const address = document.getElementById('portfolioTokenAddress').value.trim();
-            const amount = parseFloat(document.getElementById('portfolioAmount').value);
-
-            if (!address) {
-                showToast('❌ Please enter a token address');
-                return;
-            }
-
-            if (!amount || amount <= 0) {
-                showToast('❌ Please enter a valid amount');
-                return;
-            }
-
-            const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
-            const exists = portfolio.find(item => 
-                item.address === address && item.chain === currentPortfolioBlockchain
-            );
-
-            if (exists) {
-                showToast('⚠️ Token already in portfolio. Edit it instead.');
-                return;
-            }
-
-            showToast('🔄 Fetching token data...');
-            
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/scan/${address}?chain=${currentPortfolioBlockchain}`);
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                const currentPrice = parseFloat(data.priceUsd) || 0;
-                
-                portfolio.push({
-                    address: address,
-                    chain: currentPortfolioBlockchain,
-                    name: data.name || 'Unknown',
-                    symbol: data.symbol || 'N/A',
-                    amount: amount,
-                    currentPrice: currentPrice,
-                    addedPrice: currentPrice,
-                    addedAt: Date.now()
-                });
-
-                localStorage.setItem('portfolio', JSON.stringify(portfolio));
-                
-                document.getElementById('portfolioTokenAddress').value = '';
-                document.getElementById('portfolioAmount').value = '';
-                
-                loadPortfolio();
-                showToast('✅ Token added to portfolio!');
-            } catch (error) {
-                showToast('❌ Failed to add token: ' + error.message);
-            }
-        }
-
-        function loadPortfolio() {
-            const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
-            const container = document.getElementById('portfolioHoldings');
-
-            if (portfolio.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No tokens in portfolio yet. Add your first holding above! 👆</p>';
-                document.getElementById('totalPortfolioValue').textContent = '$0.00';
-                return;
-            }
-
-            let totalValue = 0;
-            const breakdown = [];
-
-            let html = '';
-            portfolio.forEach((item, index) => {
-                const value = item.currentPrice * item.amount;
-                totalValue += value;
-                
-                const percentChange = ((item.currentPrice - item.addedPrice) / item.addedPrice * 100);
-                const changeClass = percentChange >= 0 ? 'up' : 'down';
-                const changeSymbol = percentChange >= 0 ? '↑' : '↓';
-
-                breakdown.push({
-                    name: item.symbol,
-                    value: value,
-                    color: `hsl(${index * 360 / portfolio.length}, 70%, 60%)`
-                });
-
-                html += `
-                    <div class="portfolio-item">
-                        <div class="portfolio-header">
-                            <div class="portfolio-token-info">
-                                <div class="portfolio-token-name">${item.name} (${item.symbol})</div>
-                                <div class="portfolio-token-chain">${item.chain} • Added ${new Date(item.addedAt).toLocaleDateString()}</div>
-                            </div>
-                            <div class="portfolio-value">
-                                <div class="portfolio-usd-value" id="portfolio-value-${index}">$${value.toFixed(2)}</div>
-                                <div class="portfolio-change price-change ${changeClass}">
-                                    ${changeSymbol} ${Math.abs(percentChange).toFixed(2)}%
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="portfolio-details">
-                            <div class="portfolio-detail-item">
-                                <div class="portfolio-detail-label">Amount Owned</div>
-                                <div class="portfolio-detail-value">${formatNumber(item.amount)}</div>
-                            </div>
-                            <div class="portfolio-detail-item">
-                                <div class="portfolio-detail-label">Current Price</div>
-                                <div class="portfolio-detail-value" id="portfolio-price-${index}">$${item.currentPrice.toFixed(8)}</div>
-                            </div>
-                            <div class="portfolio-detail-item">
-                                <div class="portfolio-detail-label">Entry Price</div>
-                                <div class="portfolio-detail-value">$${item.addedPrice.toFixed(8)}</div>
-                            </div>
-                            <div class="portfolio-detail-item">
-                                <div class="portfolio-detail-label">Profit/Loss</div>
-                                <div class="portfolio-detail-value price-change ${changeClass}">
-                                    $${((item.currentPrice - item.addedPrice) * item.amount).toFixed(2)}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="portfolio-actions">
-                            <button class="portfolio-btn edit-portfolio-btn" onclick="editPortfolioItem(${index})">✏️ Edit Amount</button>
-                            <button class="portfolio-btn remove-portfolio-btn" onclick="removeFromPortfolio(${index})">🗑️ Remove</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            if (breakdown.length > 0) {
-                html += `
-                    <div class="portfolio-breakdown">
-                        <h3 style="margin-bottom: 20px;">📊 Portfolio Breakdown</h3>
-                        ${breakdown.map(item => {
-                            const percentage = (item.value / totalValue * 100).toFixed(1);
-                            return `
-                                <div class="breakdown-item">
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600; margin-bottom: 5px;">${item.name}</div>
-                                        <div style="font-size: 0.9em; color: var(--text-secondary);">$${item.value.toFixed(2)} • ${percentage}%</div>
-                                    </div>
-                                    <div style="width: 200px; max-width: 40%;">
-                                        <div class="breakdown-bar">
-                                            <div class="breakdown-fill" style="width: ${percentage}%; background: ${item.color};"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
-            }
-
-            container.innerHTML = html;
-            document.getElementById('totalPortfolioValue').textContent = `$${totalValue.toFixed(2)}`;
-        }
-
-        function editPortfolioItem(index) {
-            const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
-            const item = portfolio[index];
-            
-            const newAmount = prompt(`Enter new amount for ${item.symbol}:`, item.amount);
-            
-            if (newAmount && parseFloat(newAmount) > 0) {
-                portfolio[index].amount = parseFloat(newAmount);
-                localStorage.setItem('portfolio', JSON.stringify(portfolio));
-                loadPortfolio();
-                showToast('✏️ Amount updated!');
-            }
-        }
-
-        function removeFromPortfolio(index) {
-            if (confirm('Are you sure you want to remove this token from your portfolio?')) {
-                const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
-                portfolio.splice(index, 1);
-                localStorage.setItem('portfolio', JSON.stringify(portfolio));
-                loadPortfolio();
-                showToast('🗑️ Removed from portfolio');
-            }
-        }
-
-        function startPortfolioPriceMonitoring() {
-            if (portfolioPriceInterval) clearInterval(portfolioPriceInterval);
-            
-            portfolioPriceInterval = setInterval(() => {
-                updatePortfolioPrices();
-            }, 60000);
-
-            updatePortfolioPrices();
-        }
-
-        async function updatePortfolioPrices() {
-            const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
-            if (portfolio.length === 0) return;
-
-            let updated = false;
-
-            for (let i = 0; i < portfolio.length; i++) {
-                const item = portfolio[i];
-                
-                try {
-                    const response = await fetch(`${BACKEND_URL}/api/scan/${item.address}?chain=${item.chain}`);
-                    const data = await response.json();
-                    
-                    if (!data.error && data.priceUsd) {
-                        const newPrice = parseFloat(data.priceUsd);
-                        portfolio[i].currentPrice = newPrice;
-
-                        const priceElement = document.getElementById(`portfolio-price-${i}`);
-                        const valueElement = document.getElementById(`portfolio-value-${i}`);
-                        
-                        if (priceElement) {
-                            priceElement.textContent = `$${newPrice.toFixed(8)}`;
-                        }
-                        
-                        if (valueElement) {
-                            const newValue = newPrice * item.amount;
-                            valueElement.textContent = `$${newValue.toFixed(2)}`;
-                        }
-
-                        updated = true;
-                    }
-                } catch (error) {
-                    console.error(`Failed to update price for ${item.symbol}:`, error);
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-
-            if (updated) {
-                localStorage.setItem('portfolio', JSON.stringify(portfolio));
-                
-                const total = portfolio.reduce((sum, item) => sum + (item.currentPrice * item.amount), 0);
-                const totalElement = document.getElementById('totalPortfolioValue');
-                if (totalElement) {
-                    totalElement.textContent = `$${total.toFixed(2)}`;
-                }
-            }
         }
 
         // Utility functions
