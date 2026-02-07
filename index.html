@@ -1396,10 +1396,10 @@
                     <h3 style="margin-bottom: 20px;">➕ Add Token to Portfolio</h3>
                     
                     <div class="blockchain-selector" style="margin-bottom: 15px;">
-                        <button class="blockchain-btn active" onclick="selectPortfolioBlockchain('solana')">
+                        <button class="blockchain-btn active" id="portfolio-sol-btn" onclick="selectPortfolioBlockchain('solana')">
                             ☀️ Solana
                         </button>
-                        <button class="blockchain-btn" onclick="selectPortfolioBlockchain('bsc')">
+                        <button class="blockchain-btn" id="portfolio-bsc-btn" onclick="selectPortfolioBlockchain('bsc')">
                             💎 BSC
                         </button>
                     </div>
@@ -1606,12 +1606,7 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            // Find and activate the clicked tab
-            const clickedTab = Array.from(document.querySelectorAll('.tab')).find(tab => 
-                tab.textContent.toLowerCase().includes(tabName)
-            );
-            if (clickedTab) clickedTab.classList.add('active');
-            
+            event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
 
             if (tabName === 'history') loadHistory();
@@ -1682,32 +1677,53 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
             resultsDiv.innerHTML = '<div class="card"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
 
             try {
-                const response = await fetch(`${BACKEND_URL}/api/scan/${address}?chain=${currentBlockchain}`);
+                const url = `${BACKEND_URL}/api/scan/${address}?chain=${currentBlockchain}`;
+                console.log('🔍 Scanning:', url);
+                
+                const response = await fetch(url);
                 const data = await response.json();
+                
+                console.log('📦 Backend response:', data);
 
                 if (data.error) {
                     throw new Error(data.error);
                 }
 
-                // Make sure chain is set
-                if (!data.chain) {
-                    data.chain = currentBlockchain;
+                // Check if we got valid data
+                if (!data.name && !data.symbol && !data.priceUsd) {
+                    console.warn('⚠️ No token data returned');
+                    throw new Error('No token data found. Token may be too new or not listed.');
                 }
 
                 currentTokenData = data;
+                currentTokenData.chain = currentBlockchain; // Force set chain
+                
                 const score = calculateScore(data);
+                console.log('✅ Score:', score);
+                
                 displayResults(data, score);
                 saveToHistory(address, currentBlockchain, score, data);
                 
                 showToast('✅ Scan complete!');
             } catch (error) {
+                console.error('❌ Scan error:', error);
                 resultsDiv.innerHTML = `
                     <div class="card">
                         <div class="warning-flag">
                             <strong>❌ Error:</strong> ${error.message}
                         </div>
+                        <div class="info-flag" style="margin-top: 15px;">
+                            <strong>💡 Troubleshooting:</strong><br>
+                            • Check the console (F12) for detailed errors<br>
+                            • Token may be too new (just launched)<br>
+                            • Token might not be on DexScreener yet<br>
+                            • Try a known token like USDC or Jupiter
+                        </div>
                     </div>
                 `;
+                showToast('❌ Scan failed');
+            }
+        }
                 showToast('❌ Scan failed');
             }
         }
@@ -1816,11 +1832,22 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
             
             const isFavorited = checkIfFavorited(data.address, data.chain);
 
+            // Ensure data has required fields with fallbacks
+            const tokenName = data.name || 'Unknown Token';
+            const tokenSymbol = data.symbol || 'N/A';
+            const tokenChain = (data.chain || currentBlockchain).toUpperCase();
+            const liquidity = parseFloat(data.liquidity) || 0;
+            const volume24h = parseFloat(data.volume24h) || 0;
+            const priceUsd = parseFloat(data.priceUsd) || 0;
+            const marketCap = parseFloat(data.marketCap) || 0;
+            const ageHours = parseFloat(data.ageHours) || 0;
+            const totalHolders = data.holderData?.totalHolders || 0;
+
             let html = `
                 <div class="card">
                     <div class="token-header">
-                        <div class="token-name">${data.name || 'Unknown Token'}</div>
-                        <div class="token-symbol">${data.symbol || 'N/A'} • ${data.chain.toUpperCase()}</div>
+                        <div class="token-name">${tokenName}</div>
+                        <div class="token-symbol">${tokenSymbol} • ${tokenChain}</div>
                         <div class="token-address">
                             ${data.address}
                             <button class="copy-btn" onclick="copyAddress('${data.address}')">📋 Copy</button>
@@ -1842,7 +1869,7 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
                         </button>
                     </div>
 
-                    <button class="btn deep-scan-btn" onclick="runDeepScan('${data.address}', '${data.chain}')">
+                    <button class="btn deep-scan-btn" onclick="runDeepScan('${data.address}', '${data.chain || currentBlockchain}')">
                         🔬 Run Deep Scan
                     </button>
 
@@ -1863,7 +1890,7 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
                 ${generateHolderDistribution(data)}
                 ${generateContractSafety(data)}
                 ${generateSocialSignals(data)}
-                ${data.honeypotCheck && data.chain === 'bsc' ? generateHoneypotCheck(data.honeypotCheck) : ''}
+                ${data.honeypotCheck && (data.chain || currentBlockchain) === 'bsc' ? generateHoneypotCheck(data.honeypotCheck) : ''}
             `;
 
             document.getElementById('results').innerHTML = html;
@@ -1984,33 +2011,50 @@ JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"></textarea>
         }
 
         function generateMetrics(data) {
+            const liquidity = parseFloat(data.liquidity) || 0;
+            const volume24h = parseFloat(data.volume24h) || 0;
+            const priceUsd = parseFloat(data.priceUsd) || 0;
+            const marketCap = parseFloat(data.marketCap) || 0;
+            const ageHours = parseFloat(data.ageHours) || 0;
+            const totalHolders = data.holderData?.totalHolders || 0;
+
+            const hasNoData = liquidity === 0 && volume24h === 0 && priceUsd === 0;
+
             return `
                 <div class="card">
                     <h3 style="margin-bottom: 20px;">📈 Token Metrics</h3>
+                    
+                    ${hasNoData ? `
+                        <div class="warning-flag" style="margin-bottom: 20px;">
+                            <strong>⚠️ Limited Data Available</strong><br>
+                            This token may be too new or not listed on major DEXs yet. Data might be incomplete or unavailable.
+                        </div>
+                    ` : ''}
+                    
                     <div class="metrics-grid">
                         <div class="metric-card">
                             <div class="metric-label">💧 Liquidity</div>
-                            <div class="metric-value">$${formatNumber(data.liquidity)}</div>
+                            <div class="metric-value">$${formatNumber(liquidity)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">📊 24h Volume</div>
-                            <div class="metric-value">$${formatNumber(data.volume24h)}</div>
+                            <div class="metric-value">$${formatNumber(volume24h)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">💰 Price</div>
-                            <div class="metric-value">$${parseFloat(data.priceUsd).toFixed(8)}</div>
+                            <div class="metric-value">${priceUsd > 0 ? '$' + priceUsd.toFixed(8) : 'N/A'}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">📊 Market Cap</div>
-                            <div class="metric-value">$${formatNumber(data.marketCap)}</div>
+                            <div class="metric-value">$${formatNumber(marketCap)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">⏰ Token Age</div>
-                            <div class="metric-value">${formatAge(data.ageHours)}</div>
+                            <div class="metric-value">${formatAge(ageHours)}</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">👥 Holders</div>
-                            <div class="metric-value">${formatNumber(data.holderData?.totalHolders || 0)}</div>
+                            <div class="metric-value">${formatNumber(totalHolders)}</div>
                         </div>
                     </div>
                 </div>
@@ -2939,10 +2983,8 @@ Analyze your tokens at alphasniffai.com
         // PORTFOLIO FUNCTIONS
         function selectPortfolioBlockchain(chain) {
             currentPortfolioBlockchain = chain;
-            document.querySelectorAll('#portfolio .blockchain-selector .blockchain-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
+            document.getElementById('portfolio-sol-btn').classList.toggle('active', chain === 'solana');
+            document.getElementById('portfolio-bsc-btn').classList.toggle('active', chain === 'bsc');
         }
 
         async function addToPortfolio() {
@@ -2959,7 +3001,6 @@ Analyze your tokens at alphasniffai.com
                 return;
             }
 
-            // Check if already in portfolio
             const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
             const exists = portfolio.find(item => 
                 item.address === address && item.chain === currentPortfolioBlockchain
@@ -2970,7 +3011,6 @@ Analyze your tokens at alphasniffai.com
                 return;
             }
 
-            // Fetch token data
             showToast('🔄 Fetching token data...');
             
             try {
@@ -2996,7 +3036,6 @@ Analyze your tokens at alphasniffai.com
 
                 localStorage.setItem('portfolio', JSON.stringify(portfolio));
                 
-                // Clear inputs
                 document.getElementById('portfolioTokenAddress').value = '';
                 document.getElementById('portfolioAmount').value = '';
                 
@@ -3079,7 +3118,6 @@ Analyze your tokens at alphasniffai.com
                 `;
             });
 
-            // Add breakdown chart
             if (breakdown.length > 0) {
                 html += `
                     <div class="portfolio-breakdown">
@@ -3132,13 +3170,12 @@ Analyze your tokens at alphasniffai.com
             }
         }
 
-        // Portfolio price monitoring
         function startPortfolioPriceMonitoring() {
             if (portfolioPriceInterval) clearInterval(portfolioPriceInterval);
             
             portfolioPriceInterval = setInterval(() => {
                 updatePortfolioPrices();
-            }, 60000); // 60 seconds
+            }, 60000);
 
             updatePortfolioPrices();
         }
@@ -3160,7 +3197,6 @@ Analyze your tokens at alphasniffai.com
                         const newPrice = parseFloat(data.priceUsd);
                         portfolio[i].currentPrice = newPrice;
 
-                        // Update UI if on portfolio tab
                         const priceElement = document.getElementById(`portfolio-price-${i}`);
                         const valueElement = document.getElementById(`portfolio-value-${i}`);
                         
@@ -3185,7 +3221,6 @@ Analyze your tokens at alphasniffai.com
             if (updated) {
                 localStorage.setItem('portfolio', JSON.stringify(portfolio));
                 
-                // Recalculate total
                 const total = portfolio.reduce((sum, item) => sum + (item.currentPrice * item.amount), 0);
                 const totalElement = document.getElementById('totalPortfolioValue');
                 if (totalElement) {
