@@ -120,6 +120,14 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
         }
+        /* PRICE ALERT ANIMATION */
+.alert-pulse {
+    animation: alertPulse 2s ease-in-out infinite;
+}
+@keyframes alertPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
     </style>
 </head>
 <body class="text-white min-h-screen p-4 md:p-8">
@@ -310,6 +318,7 @@
         let currentTokenAddress = '';
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
         let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+        let priceAlertInterval = null;
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
@@ -397,21 +406,34 @@
         }
 
         function addToWatchlist(address, chain, score) {
-            const existing = watchlist.find(item => item.address === address);
-            if (!existing) {
-                watchlist.unshift({
-                    address,
-                    chain,
-                    score,
-                    addedAt: Date.now()
-                });
-                if (watchlist.length > 20) watchlist.pop();
-                localStorage.setItem('watchlist', JSON.stringify(watchlist));
-                showToast('✅ Added to watchlist!', 'success');
-            } else {
-                showToast('Already in watchlist!', 'info');
-            }
+    const existing = watchlist.find(item => item.address === address);
+    if (!existing) {
+        // Ask for price alert
+        const targetPrice = prompt('Set a price alert? (Enter target price in USD, or click Cancel to skip)');
+        
+        watchlist.unshift({
+            address,
+            chain,
+            score,
+            targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+            currentPrice: null,
+            alertTriggered: false,
+            addedAt: Date.now()
+        });
+        if (watchlist.length > 20) watchlist.pop();
+        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+        
+        // Start monitoring
+        if (!priceAlertInterval && targetPrice) {
+            startPriceMonitoring();
         }
+        
+        showToast('✅ Added to watchlist!', 'success');
+        loadWatchlist();
+    } else {
+        showToast('Already in watchlist!', 'info');
+    }
+}
 
         function removeFromWatchlist(address) {
             watchlist = watchlist.filter(item => item.address !== address);
@@ -454,6 +476,9 @@
                             <div class="flex gap-2 flex-wrap">
                                 <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${scan.chain.toUpperCase()}</span>
                                 <span class="text-xs px-2 py-1 ${scan.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : scan.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${scan.score}</span>
+                                ${item.targetPrice && !item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-purple-500/20 border border-purple-500/30 text-purple-400 rounded alert-pulse">🎯 Alert Active</span>' : ''}
+${item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded">✅ Hit Target!</span>' : ''}${item.targetPrice && !item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-purple-500/20 border border-purple-500/30 text-purple-400 rounded alert-pulse">🎯 Alert Active</span>' : ''}
+${item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded">✅ Hit Target!</span>' : ''}
                                 <span class="text-xs text-gray-500">${new Date(scan.timestamp).toLocaleString()}</span>
                             </div>
                         </div>
@@ -1535,6 +1560,55 @@
             
             resultsDiv.innerHTML = html;
         }
+        // ====== PRICE ALERTS ======
+function startPriceMonitoring() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    priceAlertInterval = setInterval(checkPriceAlerts, 60000);
+    checkPriceAlerts();
+}
+
+async function checkPriceAlerts() {
+    const itemsWithAlerts = watchlist.filter(item => item.targetPrice && !item.alertTriggered);
+    if (itemsWithAlerts.length === 0) return;
+    
+    for (const item of itemsWithAlerts) {
+        try {
+            const response = await fetch(API + '/api/scan/' + item.address + '?chain=' + item.chain);
+            const data = await response.json();
+            
+            if (data.success && data.data.priceUsd) {
+                const currentPrice = parseFloat(data.data.priceUsd);
+                const index = watchlist.findIndex(w => w.address === item.address);
+                watchlist[index].currentPrice = currentPrice;
+                
+                if (currentPrice >= item.targetPrice) {
+                    watchlist[index].alertTriggered = true;
+                    localStorage.setItem('watchlist', JSON.stringify(watchlist));
+                    
+                    // Send notification
+                    const shortAddr = item.address.slice(0,8) + '...' + item.address.slice(-6);
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('🎯 Price Alert!', {
+                            body: `${shortAddr} hit $${currentPrice.toFixed(8)}`
+                        });
+                    }
+                    showToast(`🎯 Alert! ${shortAddr} hit target price!`, 'success');
+                    loadWatchlist();
+                }
+            }
+        } catch (e) {
+            console.error('Price check failed', e);
+        }
+    }
+    localStorage.setItem('watchlist', JSON.stringify(watchlist));
+}
+
+// Start on page load
+if (watchlist.some(item => item.targetPrice && !item.alertTriggered)) {
+    startPriceMonitoring();
+}
     </script>
 </body>
 </html>
