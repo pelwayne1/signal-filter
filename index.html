@@ -3,80 +3,697 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha Sniff AI</title>
+    <meta name="description" content="Alpha Sniff AI - Advanced AI-powered token safety scanner for Solana & BSC">
+    <meta name="theme-color" content="#3b82f6">
+    <title>Alpha Sniff AI - Token Scanner</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alpha Sniff AI">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body {
+            background: #0a0e17;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
+        }
+        .card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        .card:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
+        }
+        .glow-text {
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        .pulse-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .sniff-icon {
+            animation: sniff 2s ease-in-out infinite;
+        }
+        @keyframes sniff {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .sniffing-animation {
+            animation: sniffing 1.5s ease-in-out infinite;
+        }
+        @keyframes sniffing {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+        .copy-feedback {
+            animation: copyPop 0.3s ease-out;
+        }
+        @keyframes copyPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+        }
+        .skeleton {
+            animation: skeleton-loading 1s linear infinite alternate;
+        }
+        @keyframes skeleton-loading {
+            0% { background-color: rgba(51, 65, 85, 0.4); }
+            100% { background-color: rgba(71, 85, 105, 0.4); }
+        }
+        .progress-ring {
+            transition: stroke-dashoffset 0.7s ease-out;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .warning-pulse {
+            animation: warningPulse 2s ease-in-out infinite;
+        }
+        @keyframes warningPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-8">
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-5xl font-bold text-center mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            🔍 Alpha Sniff AI
-        </h1>
-        
-        <div class="bg-gray-800 rounded-2xl p-8 mb-6">
-            <div class="mb-6">
-                <label class="block text-sm font-semibold mb-3">Select Blockchain</label>
-                <div class="flex gap-3">
-                    <button onclick="selectChain('solana')" id="btnSolana" class="flex-1 py-3 px-6 rounded-xl font-semibold bg-purple-600 text-white">
-                        Solana
+<body class="text-white min-h-screen p-4 md:p-8">
+    <!-- Install Prompt -->
+    <div id="installPrompt" class="install-prompt hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 shadow-2xl flex items-center gap-4 max-w-md">
+            <svg class="w-8 h-8 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <div class="flex-1">
+                <p class="font-bold text-white">Install Alpha Sniff AI</p>
+                <p class="text-sm text-blue-100">Add to your home screen!</p>
+            </div>
+            <button onclick="installApp()" class="bg-white text-blue-600 font-bold px-4 py-2 rounded-lg hover:bg-blue-50 transition-all">
+                Install
+            </button>
+            <button onclick="dismissInstall()" class="text-white hover:text-blue-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8 md:mb-12">
+            <div class="flex items-center justify-center gap-3 md:gap-4 mb-4">
+                <div id="mainIcon" class="sniff-icon relative">
+                    <div class="absolute inset-0 bg-blue-500 blur-xl opacity-50"></div>
+                    <svg class="w-10 h-10 md:w-12 md:h-12 text-blue-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <h1 class="text-4xl md:text-6xl font-bold glow-text">
+                    <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                        Alpha Sniff AI
+                    </span>
+                </h1>
+            </div>
+            <p class="text-gray-400 text-base md:text-lg mb-2">AI-Powered Token Safety Scanner</p>
+            <p class="text-gray-500 text-xs md:text-sm mb-4">Sniff out scams before you invest</p>
+            <div class="inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10">
+                <div class="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></div>
+                <span class="text-emerald-400 text-xs md:text-sm font-medium">Live Data • Real-time Analysis</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="card rounded-2xl p-2 mb-6 flex gap-2 overflow-x-auto">
+            <button onclick="switchTab('scanner')" id="tabScanner" class="tab-btn active flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm whitespace-nowrap">
+                🔍 Scanner
+            </button>
+            <button onclick="switchTab('history')" id="tabHistory" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+                📊 History
+            </button>
+            <button onclick="switchTab('watchlist')" id="tabWatchlist" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+                ⭐ Watchlist
+            </button>
+            <button onclick="switchTab('batch')" id="tabBatch" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+                ⚡ Batch
+            </button>
+        </div>
+
+        <!-- Scanner Tab -->
+        <div id="scannerTab" class="tab-content">
+            <!-- Quick Examples -->
+            <div class="card rounded-2xl p-4 md:p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-300 text-sm md:text-base">⚡ Try These Examples</h3>
+                    <span class="text-xs text-gray-500">Click to scan</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <button onclick="quickScan('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'USDC')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                        <p class="font-semibold text-sm">USDC</p>
+                        <p class="text-xs text-gray-400">Stablecoin • Should be safe</p>
                     </button>
-                    <button onclick="selectChain('bsc')" id="btnBsc" class="flex-1 py-3 px-6 rounded-xl font-semibold bg-gray-700 text-gray-300">
-                        BSC
+                    <button onclick="quickScan('JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', 'Jupiter')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                        <p class="font-semibold text-sm">Jupiter (JUP)</p>
+                        <p class="text-xs text-gray-400">DEX aggregator</p>
+                    </button>
+                    <button onclick="quickScan('DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', 'Bonk')" class="bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl p-3 text-left transition-all">
+                        <p class="font-semibold text-sm">Bonk</p>
+                        <p class="text-xs text-gray-400">Meme coin</p>
                     </button>
                 </div>
             </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-semibold mb-3">Token Address</label>
-                <input 
-                    type="text" 
-                    id="tokenInput"
-                    placeholder="Paste token address..."
-                    class="w-full bg-gray-700 border border-gray-600 rounded-xl py-4 px-5 text-white"
+            <!-- Scanner Card -->
+            <div class="card rounded-3xl p-6 md:p-8 mb-6">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-3 text-gray-300">Select Blockchain</label>
+                    <div class="flex gap-3">
+                        <button onclick="selectChain('solana')" id="btnSolana" class="flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg text-sm md:text-base">
+                            Solana
+                        </button>
+                        <button onclick="selectChain('bsc')" id="btnBsc" class="flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm md:text-base">
+                            BSC
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-3 text-gray-300">Token Address</label>
+                    <input 
+                        type="text" 
+                        id="tokenInput"
+                        placeholder="Paste token address or DEXScreener link..."
+                        class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 md:py-4 px-4 md:px-5 text-white placeholder-gray-500 text-sm md:text-base focus:border-blue-500 focus:outline-none transition-colors"
+                    >
+                </div>
+
+                <button 
+                    onclick="scanToken()"
+                    id="scanBtn"
+                    class="btn-primary w-full text-white font-bold py-3 md:py-4 px-6 rounded-xl transition-all shadow-lg text-sm md:text-base"
                 >
+                    🔍 Sniff This Token
+                </button>
+                
+                <div id="error" class="hidden mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-300 text-sm"></div>
             </div>
 
-            <button 
-                onclick="scanToken()"
-                id="scanBtn"
-                class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-6 rounded-xl"
-            >
-                🔍 Sniff This Token
-            </button>
+            <!-- Results -->
+            <div id="results"></div>
+
+            <!-- Initial State -->
+            <div id="initial" class="card rounded-3xl p-8 md:p-12 text-center">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 md:w-10 md:h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg md:text-xl font-bold mb-3">Ready to Sniff</h3>
+                <p class="text-gray-400 text-sm md:text-base">Enter any Solana or BSC token address</p>
+                <p class="text-gray-500 text-xs md:text-sm mt-2">Our AI will analyze it for safety signals</p>
+            </div>
         </div>
 
-        <div id="results"></div>
+        <!-- History Tab -->
+        <div id="historyTab" class="tab-content hidden">
+            <div class="card rounded-3xl p-6 md:p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl md:text-2xl font-bold">📊 Recent Scans</h2>
+                    <button onclick="clearHistory()" class="text-sm text-red-400 hover:text-red-300 transition-colors">Clear All</button>
+                </div>
+                <div id="historyList"></div>
+            </div>
+        </div>
+
+        <!-- Watchlist Tab -->
+        <div id="watchlistTab" class="tab-content hidden">
+            <div class="card rounded-3xl p-6 md:p-8">
+                <h2 class="text-xl md:text-2xl font-bold mb-6">⭐ Watchlist</h2>
+                <div id="watchlistList"></div>
+            </div>
+        </div>
+
+        <!-- Batch Tab -->
+        <div id="batchTab" class="tab-content hidden">
+            <div class="card rounded-3xl p-6 md:p-8">
+                <h2 class="text-xl md:text-2xl font-bold mb-4">⚡ Batch Scanner</h2>
+                <p class="text-gray-400 mb-6 text-sm md:text-base">Scan multiple tokens at once (one per line)</p>
+                
+                <textarea 
+                    id="batchInput"
+                    placeholder="Paste token addresses (one per line)&#10;Example:&#10;EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&#10;JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+                    class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-4 px-5 text-white placeholder-gray-500 mb-4 h-40 text-sm md:text-base focus:border-blue-500 focus:outline-none transition-colors"
+                ></textarea>
+                
+                <button 
+                    onclick="batchScan()"
+                    id="batchBtn"
+                    class="btn-primary w-full text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg"
+                >
+                    🔍 Scan All Tokens
+                </button>
+                
+                <div id="batchResults" class="mt-6"></div>
+            </div>
+        </div>
     </div>
 
     <script>
         let chain = 'solana';
         const API = 'https://pelwayne--2e77d232f02211f0a0c942dde27851f2.web.val.run';
+        let deferredPrompt;
+        let currentTokenAddress = '';
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+        let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.remove('hidden');
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    deferredPrompt = null;
+                    document.getElementById('installPrompt').classList.add('hidden');
+                });
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('installPrompt').classList.add('hidden');
+        }
+
+        function switchTab(tab) {
+            ['scanner', 'history', 'watchlist', 'batch'].forEach(t => {
+                document.getElementById(t + 'Tab').classList.add('hidden');
+                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('active');
+                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('bg-slate-700/30');
+            });
+            
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('bg-slate-700/30');
+            
+            if (tab === 'history') loadHistory();
+            if (tab === 'watchlist') loadWatchlist();
+        }
 
         function selectChain(c) {
             chain = c;
             if (c === 'solana') {
-                document.getElementById('btnSolana').className = 'flex-1 py-3 px-6 rounded-xl font-semibold bg-purple-600 text-white';
-                document.getElementById('btnBsc').className = 'flex-1 py-3 px-6 rounded-xl font-semibold bg-gray-700 text-gray-300';
+                document.getElementById('btnSolana').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg text-sm md:text-base';
+                document.getElementById('btnBsc').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm md:text-base';
             } else {
-                document.getElementById('btnBsc').className = 'flex-1 py-3 px-6 rounded-xl font-semibold bg-yellow-600 text-white';
-                document.getElementById('btnSolana').className = 'flex-1 py-3 px-6 rounded-xl font-semibold bg-gray-700 text-gray-300';
+                document.getElementById('btnBsc').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg text-sm md:text-base';
+                document.getElementById('btnSolana').className = 'flex-1 py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm md:text-base';
             }
+        }
+
+        function quickScan(address, name) {
+            document.getElementById('tokenInput').value = address;
+            scanToken();
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(currentTokenAddress).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                btn.classList.add('copy-feedback');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('copy-feedback');
+                }, 2000);
+            });
+        }
+
+        function shareResults(score, verdict, tokenName, tokenSymbol) {
+            const text = `Just scanned ${tokenName} ($${tokenSymbol}) with Alpha Sniff AI 🐺🔍\n\nAlpha Score: ${score}/100\nVerdict: ${verdict}\n\nTry it: alphasniffai.com`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Alpha Sniff AI Results',
+                    text: text,
+                    url: 'https://alphasniffai.com'
+                });
+            } else {
+                const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                window.open(twitterUrl, '_blank');
+            }
+        }
+
+        function addToWatchlist(address, chain, score) {
+            const existing = watchlist.find(item => item.address === address);
+            if (!existing) {
+                watchlist.unshift({
+                    address,
+                    chain,
+                    score,
+                    addedAt: Date.now()
+                });
+                if (watchlist.length > 20) watchlist.pop();
+                localStorage.setItem('watchlist', JSON.stringify(watchlist));
+                showToast('✅ Added to watchlist!', 'success');
+            } else {
+                showToast('Already in watchlist!', 'info');
+            }
+        }
+
+        function removeFromWatchlist(address) {
+            watchlist = watchlist.filter(item => item.address !== address);
+            localStorage.setItem('watchlist', JSON.stringify(watchlist));
+            loadWatchlist();
+            showToast('Removed from watchlist', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-xl shadow-2xl z-50 fade-in`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function loadHistory() {
+            const list = document.getElementById('historyList');
+            if (scanHistory.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center py-8">No scans yet. Start scanning tokens!</p>';
+                return;
+            }
+            
+            list.innerHTML = scanHistory.map(scan => `
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="font-mono text-sm mb-1">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${scan.chain.toUpperCase()}</span>
+                                <span class="text-xs px-2 py-1 ${scan.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : scan.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${scan.score}</span>
+                                <span class="text-xs text-gray-500">${new Date(scan.timestamp).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <button onclick="rescan('${scan.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                            Rescan
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadWatchlist() {
+            const list = document.getElementById('watchlistList');
+            if (watchlist.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center py-8">No tokens in watchlist. Add some from scan results!</p>';
+                return;
+            }
+            
+            list.innerHTML = watchlist.map(item => `
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="font-mono text-sm mb-1">${item.address.slice(0,8)}...${item.address.slice(-6)}</p>
+                            <div class="flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${item.chain.toUpperCase()}</span>
+                                <span class="text-xs px-2 py-1 ${item.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : item.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${item.score}</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="rescan('${item.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                                Rescan
+                            </button>
+                            <button onclick="removeFromWatchlist('${item.address}')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function rescan(address) {
+            switchTab('scanner');
+            document.getElementById('tokenInput').value = address;
+            scanToken();
+        }
+
+        function clearHistory() {
+            if (confirm('Clear all scan history?')) {
+                scanHistory = [];
+                localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+                loadHistory();
+                showToast('History cleared', 'info');
+            }
+        }
+
+        async function batchScan() {
+            const input = document.getElementById('batchInput').value.trim();
+            const addresses = input.split('\n').filter(line => line.trim().length > 0);
+            
+            if (addresses.length === 0) {
+                showToast('Please enter at least one address', 'warning');
+                return;
+            }
+            if (addresses.length > 10) {
+                showToast('Maximum 10 tokens at once', 'warning');
+                return;
+            }
+            
+            const btn = document.getElementById('batchBtn');
+            const results = document.getElementById('batchResults');
+            
+            btn.disabled = true;
+            btn.textContent = `Scanning ${addresses.length} tokens...`;
+            results.innerHTML = '<div class="text-center py-8"><div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div><p class="text-gray-400 mt-4">Analyzing tokens...</p></div>';
+            
+            const scans = [];
+            for (let i = 0; i < addresses.length; i++) {
+                const addr = addresses[i].trim();
+                btn.textContent = `Scanning ${i + 1}/${addresses.length}...`;
+                
+                try {
+                    const response = await fetch(API + '/api/scan/' + addr);
+                    const data = await response.json();
+                    if (data.success) {
+                        const score = calculateScore(data.data);
+                        scans.push({address: addr, score, data: data.data, success: true});
+                    } else {
+                        scans.push({address: addr, success: false, error: data.error});
+                    }
+                } catch (e) {
+                    scans.push({address: addr, success: false, error: e.message});
+                }
+            }
+            
+            results.innerHTML = '<div class="space-y-3">' + scans.map(scan => {
+                if (!scan.success) {
+                    return `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                        <p class="font-mono text-sm mb-1">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                        <p class="text-red-400 text-sm">Error: ${scan.error}</p>
+                    </div>`;
+                }
+                const verdict = scan.score >= 70 ? '✅ SAFE' : scan.score >= 40 ? '⚠️ RISKY' : '❌ AVOID';
+                const color = scan.score >= 70 ? 'emerald' : scan.score >= 40 ? 'yellow' : 'red';
+                return `<div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:bg-slate-700/50 transition-all">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <p class="font-mono text-sm mb-2">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                            <div class="flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-${color}-500/20 border border-${color}-500/30 text-${color}-400 rounded font-semibold">${verdict}</span>
+                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">Score: ${scan.score}</span>
+                            </div>
+                        </div>
+                        <button onclick="rescan('${scan.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                            View
+                        </button>
+                    </div>
+                </div>`;
+            }).join('') + '</div>';
+            
+            btn.disabled = false;
+            btn.textContent = '🔍 Scan All Tokens';
+            showToast(`Scanned ${scans.length} tokens`, 'success');
+        }
+
+        // IMPROVED SCORING ALGORITHM
+        function calculateScore(token) {
+            let totalScore = 0;
+            const breakdown = {
+                liquidity: 0,
+                volume: 0,
+                holder: 0,
+                contract: 0,
+                honeypot: 0,
+                social: 0
+            };
+            
+            // 1. Liquidity Score (0-25 points)
+            if (token.liquidity < 5000) breakdown.liquidity = 0;
+            else if (token.liquidity < 20000) breakdown.liquidity = 8;
+            else if (token.liquidity < 50000) breakdown.liquidity = 15;
+            else if (token.liquidity < 100000) breakdown.liquidity = 20;
+            else breakdown.liquidity = 25;
+            
+            // 2. Volume Score (0-20 points)
+            const volRatio = token.volume24h / (token.liquidity || 1);
+            if (volRatio < 0.1) breakdown.volume = 2;
+            else if (volRatio < 0.3) breakdown.volume = 8;
+            else if (volRatio < 0.5) breakdown.volume = 12;
+            else if (volRatio < 1.0) breakdown.volume = 16;
+            else breakdown.volume = 20;
+            
+            // 3. Age is NOT scored - displayed as info only
+            // New tokens aren't penalized, old scams don't get bonus points
+            
+            // 4. Holder Distribution Score (0-20 points)
+            if (token.holderData && !token.holderData.error) {
+                if (token.holderData.topHolderPercent > 50) breakdown.holder = 2;
+                else if (token.holderData.topHolderPercent > 40) breakdown.holder = 5;
+                else if (token.holderData.topHolderPercent > 30) breakdown.holder = 10;
+                else if (token.holderData.topHolderPercent > 20) breakdown.holder = 15;
+                else breakdown.holder = 20;
+            } else {
+                breakdown.holder = 10; // Default if no data
+            }
+            
+            // 5. Contract Safety Score (0-20 points) - INCREASED from 15
+            if (token.contractSafety && !token.contractSafety.error) {
+                if (token.chain === 'solana') {
+                    if (token.contractSafety.mintAuthorityRevoked) breakdown.contract += 10;
+                    if (token.contractSafety.freezeAuthorityDisabled) breakdown.contract += 10;
+                } else if (token.chain === 'bsc') {
+                    if (token.contractSafety.ownershipRenounced) breakdown.contract += 12;
+                    if (!token.contractSafety.canMint) breakdown.contract += 4;
+                    if (!token.contractSafety.hasPauseFunction) breakdown.contract += 4;
+                }
+            } else {
+                breakdown.contract = 10; // Default if no data
+            }
+            
+            // 6. Honeypot Check (BSC only, 0-5 bonus points)
+            if (token.honeypotCheck) {
+                if (!token.honeypotCheck.isHoneypot) {
+                    breakdown.honeypot = 5;
+                    if (token.honeypotCheck.sellTax > 10) breakdown.honeypot = 2;
+                    if (token.honeypotCheck.sellTax > 20) breakdown.honeypot = 0;
+                } else {
+                    breakdown.honeypot = -50; // Massive penalty for honeypots
+                }
+            }
+            
+            // 7. Social Presence Score (0-10 points)
+            if (token.socialInfo) {
+                breakdown.social = Math.floor(token.socialInfo.socialScore * 0.1); // Scale to 10 points max
+                
+                // Penalty if NO social presence at all
+                if (token.socialInfo.socialCount === 0) {
+                    breakdown.social = -5; // Red flag for no socials
+                }
+            } else {
+                breakdown.social = 0;
+            }
+            
+            totalScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+            
+            // Cap score at 100
+            totalScore = Math.min(100, Math.max(0, totalScore));
+            
+            return totalScore;
         }
 
         async function scanToken() {
             const input = document.getElementById('tokenInput').value.trim();
             if (!input) {
-                alert('Please enter a token address');
+                showToast('Please enter a token address', 'warning');
                 return;
             }
 
             const btn = document.getElementById('scanBtn');
+            const err = document.getElementById('error');
             const res = document.getElementById('results');
+            const init = document.getElementById('initial');
+            const icon = document.getElementById('mainIcon');
 
             btn.disabled = true;
-            btn.innerHTML = 'Scanning...';
+            btn.innerHTML = '<div class="inline-block w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Sniffing...';
+            icon.classList.add('sniffing-animation');
+            err.classList.add('hidden');
+            init.classList.add('hidden');
             
-            res.innerHTML = '<div class="bg-gray-800 rounded-2xl p-8 text-center">Loading...</div>';
+            // Show loading skeleton
+            res.innerHTML = `
+                <div class="card rounded-3xl p-8 fade-in">
+                    <div class="space-y-4">
+                        <div class="skeleton h-8 rounded"></div>
+                        <div class="skeleton h-24 rounded"></div>
+                        <div class="skeleton h-32 rounded"></div>
+                    </div>
+                </div>
+            `;
 
             try {
                 let addr = input;
@@ -85,131 +702,838 @@
                     if (m) addr = m[1];
                 }
 
-                console.log('Scanning:', addr, 'Chain:', chain);
-                
-                const response = await fetch(API + '/api/scan/' + addr + '?chain=' + chain);
+                currentTokenAddress = addr;
+
+                const response = await fetch(API + '/api/scan/' + addr);
                 const data = await response.json();
 
-                console.log('Response:', data);
-
                 if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Scan failed');
+                    throw new Error(data.error || 'Failed to fetch token data');
                 }
 
                 const score = calculateScore(data.data);
+                
+                // Add to history
+                scanHistory.unshift({
+                    address: addr,
+                    chain: data.data.chain,
+                    score: score,
+                    timestamp: Date.now()
+                });
+                if (scanHistory.length > 10) scanHistory.pop();
+                localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+
                 showResults(data.data, addr, score);
+                showToast('Scan complete!', 'success');
 
             } catch (e) {
-                console.error('Error:', e);
-                res.innerHTML = `<div class="bg-red-900/20 border border-red-500 rounded-xl p-6 text-red-300">
-                    ❌ Error: ${e.message}
-                </div>`;
+                err.textContent = '⚠️ ' + e.message;
+                err.classList.remove('hidden');
+                res.innerHTML = '';
+                init.classList.remove('hidden');
+                showToast('Scan failed: ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '🔍 Sniff This Token';
+                icon.classList.remove('sniffing-animation');
             }
         }
 
-        function calculateScore(token) {
-            let score = 0;
+        function createCircularProgress(percentage, size = 120) {
+            const radius = (size - 20) / 2;
+            const circumference = radius * 2 * Math.PI;
+            const offset = circumference - (percentage / 100) * circumference;
             
-            const liq = parseFloat(token.liquidity) || 0;
-            if (liq >= 100000) score += 25;
-            else if (liq >= 50000) score += 20;
-            else if (liq >= 10000) score += 15;
-            else score += 5;
+            const color = percentage >= 70 ? '#10b981' : percentage >= 40 ? '#eab308' : '#ef4444';
             
-            const vol = parseFloat(token.volume24h) || 0;
-            if (vol >= 100000) score += 20;
-            else if (vol >= 50000) score += 15;
-            else if (vol >= 10000) score += 10;
-            else score += 5;
-            
-            if (token.holderData && !token.holderData.error) {
-                const topHolder = parseFloat(token.holderData.topHolderPercent) || 0;
-                if (topHolder < 5) score += 20;
-                else if (topHolder < 10) score += 15;
-                else if (topHolder < 20) score += 10;
-                else score += 5;
-            } else {
-                score += 10;
-            }
-            
-            if (token.contractSafety && !token.contractSafety.error) {
-                let safetyScore = 0;
-                if (token.chain === 'solana') {
-                    if (token.contractSafety.mintAuthorityRevoked) safetyScore += 10;
-                    if (token.contractSafety.freezeAuthorityDisabled) safetyScore += 10;
-                } else {
-                    if (token.contractSafety.ownershipRenounced) safetyScore += 10;
-                    if (!token.contractSafety.hasPauseFunction) safetyScore += 5;
-                    if (!token.contractSafety.canMint) safetyScore += 5;
-                }
-                score += safetyScore;
-            } else {
-                score += 10;
-            }
-            
-            if (token.honeypotCheck) {
-                if (!token.honeypotCheck.isHoneypot) {
-                    score += 5;
-                } else {
-                    score -= 50;
-                }
-            }
-            
-            if (token.socialInfo) {
-                let socialScore = 0;
-                if (token.socialInfo.hasTwitter) socialScore += 6;
-                if (token.socialInfo.hasWebsite) socialScore += 4;
-                
-                if (socialScore === 0) {
-                    score -= 5;
-                } else {
-                    score += socialScore;
-                }
-            }
-            
-            return Math.min(100, Math.max(0, score));
+            return `
+                <svg width="${size}" height="${size}" class="transform -rotate-90">
+                    <circle cx="${size/2}" cy="${size/2}" r="${radius}" stroke="rgba(255,255,255,0.1)" stroke-width="10" fill="none" />
+                    <circle 
+                        cx="${size/2}" cy="${size/2}" r="${radius}" 
+                        stroke="${color}" 
+                        stroke-width="10" 
+                        fill="none"
+                        stroke-dasharray="${circumference}"
+                        stroke-dashoffset="${offset}"
+                        class="progress-ring transition-all duration-700"
+                        stroke-linecap="round"
+                    />
+                    <text x="${size/2}" y="${size/2}" text-anchor="middle" dy=".3em" class="transform rotate-90" style="transform-origin: ${size/2}px ${size/2}px; font-size: 28px; font-weight: bold; fill: white;">
+                        ${Math.round(percentage)}
+                    </text>
+                </svg>
+            `;
         }
 
         function showResults(token, addr, score) {
-            const verdict = score >= 70 ? '✅ SAFE' : score >= 40 ? '⚠️ RISKY' : '❌ DANGER';
-            const color = score >= 70 ? 'emerald' : score >= 40 ? 'yellow' : 'red';
-            const tokenChain = (token.chain || chain || 'solana').toUpperCase();
+            const flags = [];
+            
+            // Liquidity flags
+            if (token.liquidity < 10000) flags.push('🚨 Low liquidity detected');
+            
+            // Age flags - WARNINGS ONLY, doesn't affect score
+            if (token.ageHours < 1) flags.push('⚠️ VERY NEW - Created less than 1 hour ago! Exercise extreme caution.');
+            else if (token.ageHours < 6) flags.push('⚠️ New token - Created less than 6 hours ago. Wait for more trading history.');
+            else if (token.ageHours < 24) flags.push('ℹ️ Recent launch - Less than 24 hours old.');
+            
+            // Volume flags
+            const volRatio = token.volume24h / (token.liquidity || 1);
+            if (volRatio < 0.1) flags.push('📉 Low trading activity');
+            
+            // Holder flags
+            if (token.holderData && !token.holderData.error) {
+                if (token.holderData.topHolderPercent > 40) {
+                    flags.push(`🐋 Top holder owns ${token.holderData.topHolderPercent.toFixed(1)}% - Whale risk!`);
+                }
+                if (token.holderData.top10HoldersPercent > 70) {
+                    flags.push('📊 Top 10 holders control >70% of supply');
+                }
+            }
+            
+            // Contract safety flags
+            if (token.contractSafety && !token.contractSafety.error) {
+                if (token.chain === 'solana') {
+                    if (!token.contractSafety.mintAuthorityRevoked) {
+                        flags.push('⚠️ Mint authority NOT revoked - Can print unlimited tokens!');
+                    }
+                    if (!token.contractSafety.freezeAuthorityDisabled) {
+                        flags.push('🔒 Freeze authority active - Can freeze transfers!');
+                    }
+                } else if (token.chain === 'bsc') {
+                    if (!token.contractSafety.ownershipRenounced) {
+                        flags.push('👤 Ownership NOT renounced - Dev has control!');
+                    }
+                    if (token.contractSafety.hasPauseFunction) {
+                        flags.push('⏸️ Contract has pause function - Trading can be stopped!');
+                    }
+                }
+            }
+            
+            // Honeypot flags
+            if (token.honeypotCheck) {
+                if (token.honeypotCheck.isHoneypot) {
+                    flags.push('🚫 HONEYPOT DETECTED - Cannot sell!');
+                }
+                if (token.honeypotCheck.sellTax > 10) {
+                    flags.push(`💸 High sell tax: ${token.honeypotCheck.sellTax.toFixed(1)}%`);
+                }
+            }
+            
+            // Rugcheck flags
+            if (token.rugcheckData && token.rugcheckData.risks && token.rugcheckData.risks.length > 0) {
+                flags.push(`🚩 Rugcheck: ${token.rugcheckData.risks.length} risk(s) detected`);
+            }
+            
+            // Social flags
+            if (token.socialInfo) {
+                if (token.socialInfo.socialCount === 0) {
+                    flags.push('📵 No Twitter or Website - Major red flag!');
+                } else if (!token.socialInfo.hasTwitter) {
+                    flags.push('⚠️ Missing Twitter account - Unusual for crypto');
+                }
+            }
+
+            const verdict = score >= 70 ? 
+                {l: 'SAFE', e: '✅', c: 'emerald', t: 'Alpha Approved'} : 
+                score >= 40 ? 
+                {l: 'RISKY', e: '⚠️', c: 'yellow', t: 'Proceed with Caution'} : 
+                {l: 'AVOID', e: '❌', c: 'red', t: 'Red Flags Detected'};
+
+            const insights = generateAIInsights(token, score, flags);
+            const shortAddr = addr.slice(0,8) + '...' + addr.slice(-6);
+            const explorerUrl = token.chain === 'solana' ? 
+                `https://solscan.io/token/${addr}` : 
+                `https://bscscan.com/token/${addr}`;
+            const dexscreenerUrl = token.url || `https://dexscreener.com/${token.chain}/${addr}`;
 
             let html = `
-                <div class="bg-gray-800 rounded-2xl p-8 mb-6">
-                    <h2 class="text-3xl font-bold mb-2">${token.name || 'Unknown'}</h2>
-                    <p class="text-xl text-gray-400 mb-4">$${token.symbol || 'N/A'} • ${tokenChain}</p>
-                    
-                    <div class="text-center my-8">
-                        <div class="text-6xl font-bold text-${color}-400 mb-2">${score}</div>
-                        <div class="text-2xl font-semibold text-${color}-400">${verdict}</div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 mt-6">
-                        <div class="bg-gray-700 rounded-xl p-4">
-                            <p class="text-gray-400 text-sm">Liquidity</p>
-                            <p class="text-xl font-bold">$${(token.liquidity || 0).toLocaleString()}</p>
-                        </div>
-                        <div class="bg-gray-700 rounded-xl p-4">
-                            <p class="text-gray-400 text-sm">Volume 24h</p>
-                            <p class="text-xl font-bold">$${(token.volume24h || 0).toLocaleString()}</p>
-                        </div>
-                        <div class="bg-gray-700 rounded-xl p-4">
-                            <p class="text-gray-400 text-sm">Price</p>
-                            <p class="text-xl font-bold">$${token.priceUsd || '0'}</p>
-                        </div>
-                        <div class="bg-gray-700 rounded-xl p-4">
-                            <p class="text-gray-400 text-sm">Market Cap</p>
-                            <p class="text-xl font-bold">$${((token.marketCap || 0)/1000000).toFixed(2)}M</p>
+                <div class="card rounded-3xl p-6 md:p-8 mb-6 fade-in">
+                    <!-- Token Name Header -->
+                    <div class="mb-6 pb-6 border-b border-slate-700/50">
+                        <h2 class="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            ${token.name || 'Unknown Token'}
+                        </h2>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span class="text-xl md:text-2xl font-semibold text-gray-300">$${token.symbol || 'UNKNOWN'}</span>
+                            <span class="px-3 py-1 bg-slate-700/50 rounded-lg text-sm text-gray-400">${token.chain.toUpperCase()}</span>
                         </div>
                     </div>
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
+                        <!-- Left: Token Info -->
+                        <div class="flex-1 min-w-[200px]">
+                            <p class="text-sm text-gray-400 mb-2">Token Address</p>
+                            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                                <p class="font-mono text-base md:text-xl font-semibold">${shortAddr}</p>
+                                <button id="copyBtn" onclick="copyAddress()" class="bg-slate-700/50 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-1 text-xs transition-all">
+                                    📋 Copy
+                                </button>
+                            </div>
+                            <div class="flex gap-2 flex-wrap">
+                                ${token.dexId ? `<span class="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-xs font-semibold">${token.dexId}</span>` : ''}
+                                <a href="${explorerUrl}" target="_blank" class="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-xs font-semibold hover:bg-purple-500/30 transition-all">
+                                    🔗 Explorer
+                                </a>
+                                <a href="${dexscreenerUrl}" target="_blank" class="inline-block px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-xs font-semibold hover:bg-green-500/30 transition-all">
+                                    📊 Chart
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Right: Score Circle -->
+                        <div class="text-center">
+                            <p class="text-sm text-gray-400 mb-3">Alpha Score</p>
+                            ${createCircularProgress(score)}
+                            <div class="bg-${verdict.c}-500/20 border border-${verdict.c}-500/30 rounded-xl px-4 py-2 mt-4">
+                                <p class="text-2xl mb-1">${verdict.e}</p>
+                                <p class="text-${verdict.c}-400 font-bold text-lg">${verdict.l}</p>
+                                <p class="text-${verdict.c}-300 text-xs mt-1">${verdict.t}</p>
+                            </div>
+                            <div class="flex gap-2 mt-4 justify-center flex-wrap">
+                                <button onclick="shareResults(${score}, '${verdict.l}', '${token.name?.replace(/'/g, "\\'")}', '${token.symbol}')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+                                    🐦 Share
+                                </button>
+                                <button onclick="addToWatchlist('${addr}', '${token.chain}', ${score})" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+                                    ⭐ Watch
+                                </button>
+                                <button onclick="exportAsImage()" class="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+                                    📸 Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Insights -->
+                    <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-6 mb-6">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">🤖</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-blue-400 mb-2">AI Insights</p>
+                                <p class="text-sm text-gray-300 leading-relaxed">${insights}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deep Scan Button -->
+                    <div class="text-center mb-6">
+                        <button 
+                            onclick="runDeepScan('${addr}', '${token.chain}')"
+                            id="deepScanBtn"
+                            class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all text-sm md:text-base hover:shadow-2xl">
+                            🔬 Run Deep Scan (Advanced Analysis)
+                        </button>
+                        <p class="text-gray-500 text-xs mt-2">Checks liquidity lock, fresh wallets & trading patterns</p>
+                    </div>
+
+                    <!-- Deep Scan Results (Initially Hidden) -->
+                    <div id="deepScanResults" class="hidden"></div>
+`;
+
+            // Warning flags
+            if (flags.length > 0) {
+                html += `<div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 mb-6 ${flags.length > 2 ? 'warning-pulse' : ''}">
+                    <p class="font-bold text-red-400 mb-3 text-lg">⚠️ Alpha Sniff Warnings (${flags.length})</p>
+                    <ul class="space-y-2">${flags.map(f => `<li class="text-red-300 text-sm md:text-base">• ${f}</li>`).join('')}</ul>
+                </div>`;
+            }
+
+            // Holder Distribution Visualization
+            if (token.holderData && !token.holderData.error) {
+                const topPercent = token.holderData.topHolderPercent || 0;
+                const top10Percent = token.holderData.top10HoldersPercent || 0;
+                const othersPercent = 100 - top10Percent;
+                
+                html += `
+                    <div class="card rounded-2xl p-6 mb-6">
+                        <h3 class="font-bold mb-4 text-lg">👥 Holder Distribution</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">Top Holder</span>
+                                    <span class="text-sm font-bold ${topPercent > 40 ? 'text-red-400' : topPercent > 20 ? 'text-yellow-400' : 'text-emerald-400'}">${topPercent.toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full ${topPercent > 40 ? 'bg-red-500' : topPercent > 20 ? 'bg-yellow-500' : 'bg-emerald-500'} transition-all duration-700" style="width: ${topPercent}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">Top 10 Holders</span>
+                                    <span class="text-sm font-bold ${top10Percent > 70 ? 'text-red-400' : top10Percent > 50 ? 'text-yellow-400' : 'text-emerald-400'}">${top10Percent.toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full ${top10Percent > 70 ? 'bg-red-500' : top10Percent > 50 ? 'bg-yellow-500' : 'bg-emerald-500'} transition-all duration-700" style="width: ${top10Percent}%"></div>
+                                </div>
+                            </div>
+                            ${token.holderData.holderCount ? `
+                            <div class="text-center pt-2">
+                                <p class="text-gray-400 text-sm">Total Holders: <span class="text-white font-semibold">${token.holderData.holderCount}</span></p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Contract Safety Details
+            if (token.contractSafety && !token.contractSafety.error) {
+                html += `
+                    <div class="card rounded-2xl p-6 mb-6">
+                        <h3 class="font-bold mb-4 text-lg">🔒 Contract Safety</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                `;
+                
+                if (token.chain === 'solana') {
+                    html += `
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${token.contractSafety.mintAuthorityRevoked ? 'bg-emerald-500/10' : 'bg-red-500/10'}">
+                            <span class="text-2xl">${token.contractSafety.mintAuthorityRevoked ? '✅' : '❌'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Mint Authority</p>
+                                <p class="text-xs text-gray-400">${token.contractSafety.mintAuthorityRevoked ? 'Revoked' : 'Active (Risky!)'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${token.contractSafety.freezeAuthorityDisabled ? 'bg-emerald-500/10' : 'bg-red-500/10'}">
+                            <span class="text-2xl">${token.contractSafety.freezeAuthorityDisabled ? '✅' : '❌'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Freeze Authority</p>
+                                <p class="text-xs text-gray-400">${token.contractSafety.freezeAuthorityDisabled ? 'Disabled' : 'Active (Risky!)'}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${token.contractSafety.ownershipRenounced ? 'bg-emerald-500/10' : 'bg-red-500/10'}">
+                            <span class="text-2xl">${token.contractSafety.ownershipRenounced ? '✅' : '❌'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Ownership</p>
+                                <p class="text-xs text-gray-400">${token.contractSafety.ownershipRenounced ? 'Renounced' : 'Not Renounced'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${!token.contractSafety.hasPauseFunction ? 'bg-emerald-500/10' : 'bg-yellow-500/10'}">
+                            <span class="text-2xl">${!token.contractSafety.hasPauseFunction ? '✅' : '⚠️'}</span>
+                            <div>
+                                <p class="font-semibold text-sm">Pause Function</p>
+                                <p class="text-xs text-gray-400">${!token.contractSafety.hasPauseFunction ? 'None Found' : 'Present'}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `</div></div>`;
+            }
+
+            // Honeypot Check (BSC)
+            if (token.honeypotCheck) {
+                const isHoneypot = token.honeypotCheck.isHoneypot;
+                html += `
+                    <div class="card rounded-2xl p-6 mb-6 ${isHoneypot ? 'border-red-500' : ''}">
+                        <h3 class="font-bold mb-4 text-lg flex items-center gap-2">
+                            🍯 Honeypot Check
+                            ${isHoneypot ? '<span class="text-red-400 text-sm">(DANGER!)</span>' : '<span class="text-emerald-400 text-sm">(Clear)</span>'}
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="text-center p-3 rounded-lg ${isHoneypot ? 'bg-red-500/20' : 'bg-emerald-500/10'}">
+                                <p class="text-2xl mb-1">${isHoneypot ? '🚫' : '✅'}</p>
+                                <p class="text-xs text-gray-400">Honeypot</p>
+                                <p class="font-semibold text-sm">${isHoneypot ? 'YES' : 'NO'}</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg bg-slate-700/30">
+                                <p class="text-2xl mb-1">💰</p>
+                                <p class="text-xs text-gray-400">Buy Tax</p>
+                                <p class="font-semibold text-sm">${token.honeypotCheck.buyTax.toFixed(1)}%</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg ${token.honeypotCheck.sellTax > 10 ? 'bg-red-500/10' : 'bg-slate-700/30'}">
+                                <p class="text-2xl mb-1">💸</p>
+                                <p class="text-xs text-gray-400">Sell Tax</p>
+                                <p class="font-semibold text-sm ${token.honeypotCheck.sellTax > 10 ? 'text-red-400' : ''}">${token.honeypotCheck.sellTax.toFixed(1)}%</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg ${!token.honeypotCheck.canSell ? 'bg-red-500/20' : 'bg-emerald-500/10'}">
+                                <p class="text-2xl mb-1">${token.honeypotCheck.canSell ? '✅' : '❌'}</p>
+                                <p class="text-xs text-gray-400">Can Sell</p>
+                                <p class="font-semibold text-sm">${token.honeypotCheck.canSell ? 'YES' : 'NO'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Social Signals Panel
+            if (token.socialInfo) {
+                const noSocials = token.socialInfo.socialCount === 0;
+                const hasTwitterOnly = token.socialInfo.hasTwitter && !token.socialInfo.hasWebsite;
+                const hasWebsiteOnly = !token.socialInfo.hasTwitter && token.socialInfo.hasWebsite;
+                const hasBoth = token.socialInfo.hasTwitter && token.socialInfo.hasWebsite;
+                
+                html += `
+                    <div class="card rounded-2xl p-6 mb-6 ${noSocials ? 'border-red-500/30' : ''}">
+                        <h3 class="font-bold mb-4 text-lg flex items-center gap-2">
+                            📱 Social Presence
+                            ${noSocials ? '<span class="text-red-400 text-sm">(NO SOCIALS!)</span>' : hasBoth ? '<span class="text-emerald-400 text-sm">(Complete)</span>' : '<span class="text-yellow-400 text-sm">(Partial)</span>'}
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="text-center p-4 rounded-lg ${token.socialInfo.hasTwitter ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-slate-700/30'}">
+                                <p class="text-3xl mb-2">${token.socialInfo.hasTwitter ? '✅' : '❌'}</p>
+                                <p class="text-sm font-semibold text-gray-300 mb-1">Twitter</p>
+                                <p class="text-xs text-gray-500 mb-2">Essential for crypto</p>
+                                ${token.socialInfo.hasTwitter && token.socialInfo.twitterUrl ? `<a href="${token.socialInfo.twitterUrl}" target="_blank" class="text-xs text-blue-400 hover:underline font-semibold">Visit Profile →</a>` : '<span class="text-xs text-gray-600">Not found</span>'}
+                            </div>
+                            <div class="text-center p-4 rounded-lg ${token.socialInfo.hasWebsite ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-slate-700/30'}">
+                                <p class="text-3xl mb-2">${token.socialInfo.hasWebsite ? '✅' : '❌'}</p>
+                                <p class="text-sm font-semibold text-gray-300 mb-1">Website</p>
+                                <p class="text-xs text-gray-500 mb-2">Shows legitimacy</p>
+                                ${token.socialInfo.hasWebsite && token.socialInfo.websiteUrl ? `<a href="${token.socialInfo.websiteUrl}" target="_blank" class="text-xs text-purple-400 hover:underline font-semibold">Visit Site →</a>` : '<span class="text-xs text-gray-600">Not found</span>'}
+                            </div>
+                        </div>
+                        
+                        ${noSocials ? `
+                            <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                                <p class="text-red-400 text-sm font-semibold">🚨 No Twitter or Website detected!</p>
+                                <p class="text-red-300 text-xs mt-1">Legitimate crypto projects always have at least a Twitter account. This is a major red flag.</p>
+                            </div>
+                        ` : `
+                            <div class="flex justify-between items-center mt-4">
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-2">
+                                        <span class="text-gray-400 text-sm">Social Score</span>
+                                        <span class="font-bold text-sm ${token.socialInfo.socialScore === 100 ? 'text-emerald-400' : token.socialInfo.socialScore >= 40 ? 'text-yellow-400' : 'text-red-400'}">${token.socialInfo.socialScore}/100</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-slate-700 rounded-full">
+                                        <div class="h-full ${token.socialInfo.socialScore === 100 ? 'bg-emerald-500' : token.socialInfo.socialScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'} rounded-full transition-all duration-700" style="width: ${token.socialInfo.socialScore}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            ${!hasBoth ? `
+                                <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mt-4">
+                                    <p class="text-yellow-400 text-xs">⚠️ ${hasTwitterOnly ? 'Missing website - partial presence' : 'Missing Twitter - unusual for crypto projects'}</p>
+                                </div>
+                            ` : `
+                                <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 mt-4">
+                                    <p class="text-emerald-400 text-xs">✅ Has both Twitter and Website - good sign!</p>
+                                </div>
+                            `}
+                        `}
+                    </div>
+                `;
+            }
+
+            // Token Metrics
+            html += `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
+                        <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">💵</span> Liquidity</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">Total USD</span>
+                                <span class="font-bold text-emerald-400 text-sm md:text-base">$${token.liquidity.toLocaleString()}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">Liq/MC Ratio</span>
+                                <span class="font-semibold text-sm md:text-base">${(token.liquidity/(token.marketCap || 1)).toFixed(4)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
+                        <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">📈</span> Volume</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">24h Volume</span>
+                                <span class="font-bold text-blue-400 text-sm md:text-base">$${token.volume24h.toLocaleString()}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">Vol/Liq Ratio</span>
+                                <span class="font-semibold text-sm md:text-base">${(token.volume24h/(token.liquidity || 1)).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
+                        <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">⏰</span> Token Info</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">Age</span>
+                                <span class="font-semibold text-purple-400 text-sm md:text-base">${token.ageHours < 24 ? token.ageHours + 'h' : Math.floor(token.ageHours/24) + 'd'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">Price</span>
+                                <span class="font-semibold text-sm md:text-base">$${token.priceUsd}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card rounded-2xl p-5 md:p-6 hover:transform hover:scale-105 transition-all">
+                        <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-xl">💰</span> Market Cap</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">FDV</span>
+                                <span class="font-bold text-yellow-400 text-sm md:text-base">$${(token.marketCap/1000000).toFixed(2)}M</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 text-sm md:text-base">24h Change</span>
+                                <span class="font-semibold text-sm md:text-base ${token.priceChange24h >= 0 ? 'text-emerald-400' : 'text-red-400'}">
+                                    ${token.priceChange24h >= 0 ? '+' : ''}${token.priceChange24h.toFixed(2)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-gray-500 text-xs md:text-sm">
+                        🐺 Sniffed by Alpha Sniff AI • Not financial advice • Always DYOR
+                    </p>
                 </div>
             `;
 
             document.getElementById('results').innerHTML = html;
+        }
+
+        function generateAIInsights(token, score, flags) {
+            if (token.honeypotCheck?.isHoneypot) {
+                return `🚨 CRITICAL WARNING: This token has been identified as a HONEYPOT! You will NOT be able to sell this token. Do not invest under any circumstances. This is a scam designed to steal your money.`;
+            }
+            
+            if (score >= 80) {
+                return `This token demonstrates excellent fundamentals with robust liquidity of $${(token.liquidity/1000).toFixed(1)}k and strong trading volume. The ${token.ageHours < 24 ? 'recent launch' : 'established presence'} combined with ${flags.length === 0 ? 'no major red flags' : 'manageable risk factors'} suggests a legitimate project. However, always conduct thorough research before investing.`;
+            } else if (score >= 60) {
+                return `Moderate risk profile detected. Liquidity is ${token.liquidity < 50000 ? 'lower than ideal' : 'acceptable'} at $${(token.liquidity/1000).toFixed(1)}k. The token is ${token.ageHours < 24 ? token.ageHours + ' hours old - still very fresh' : Math.floor(token.ageHours/24) + ' days old'}. ${flags.length > 0 ? `There are ${flags.length} warning sign(s) to consider.` : ''} Recommend waiting for more trading history and community validation before investing significant capital.`;
+            } else if (score >= 40) {
+                return `⚠️ Proceed with extreme caution. ${flags.length} red flag(s) detected including ${token.liquidity < 10000 ? 'critically low liquidity' : 'concerning metrics'}. ${token.holderData && token.holderData.topHolderPercent > 40 ? 'Whale concentration is dangerously high.' : ''} This token shows risky characteristics that could indicate a potential scam. Only invest what you can afford to lose completely, and always verify contract safety independently.`;
+            } else {
+                return `🚨 High risk detected! This token has multiple severe warning indicators: ${token.liquidity < 5000 ? 'critically insufficient liquidity' : 'poor fundamentals'}, ${token.ageHours < 1 ? 'just launched (< 1 hour)' : 'suspicious patterns'}. ${!token.contractSafety || token.contractSafety.error ? 'Unable to verify contract safety.' : 'Contract has concerning permissions.'} Strong recommendation to AVOID this token. High probability of rug pull or scam. Protect your capital.`;
+            }
+        }
+        
+        // ========================================
+        // EXPORT AS IMAGE FUNCTIONALITY
+        // ========================================
+        
+        async function exportAsImage() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!resultsDiv.innerHTML.trim()) {
+                showToast('No scan results to export!', 'warning');
+                return;
+            }
+            
+            showToast('Generating image...', 'info');
+            
+            try {
+                // Use html2canvas to capture the results div
+                const canvas = await html2canvas(resultsDiv, {
+                    backgroundColor: '#0a0e17',
+                    scale: 2, // Higher quality
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                // Convert to blob
+                canvas.toBlob(async (blob) => {
+                    const fileName = `alphasniff-scan-${Date.now()}.png`;
+                    
+                    // Check if Web Share API is available (mobile)
+                    if (navigator.share && navigator.canShare) {
+                        try {
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            if (navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'AlphaSniff AI Scan Results',
+                                    text: 'Check out this token scan from AlphaSniff AI!'
+                                });
+                                showToast('Shared successfully!', 'success');
+                                return;
+                            }
+                        } catch (e) {
+                            if (e.name === 'AbortError') return; // User cancelled
+                        }
+                    }
+                    
+                    // Fallback: Download
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('Image downloaded!', 'success');
+                    
+                }, 'image/png');
+                
+            } catch (e) {
+                console.error('Export failed:', e);
+                showToast('Failed to export image: ' + e.message, 'error');
+            }
+        }
+        
+        // ========================================
+        // DEEP SCAN FUNCTIONALITY
+        // ========================================
+        
+        // Switch between timeframes in trading patterns
+        function switchTimeframe(timeframe) {
+            // Hide all pattern data
+            document.querySelectorAll('.pattern-data').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Show selected timeframe
+            document.getElementById('pattern-' + timeframe).classList.remove('hidden');
+            
+            // Update tab styling
+            document.querySelectorAll('.timeframe-tab').forEach(btn => {
+                btn.classList.remove('active', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-500', 'text-white');
+                btn.classList.add('bg-slate-700/50', 'text-gray-300');
+            });
+            
+            document.getElementById('timeframe-' + timeframe).classList.add('active', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-500', 'text-white');
+            document.getElementById('timeframe-' + timeframe).classList.remove('bg-slate-700/50', 'text-gray-300');
+        }
+        
+        async function runDeepScan(address, chain) {
+            const btn = document.getElementById('deepScanBtn');
+            const resultsDiv = document.getElementById('deepScanResults');
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<div class="inline-block w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Running Deep Scan...';
+            
+            // Show loading skeleton
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.innerHTML = `
+                <div class="card rounded-3xl p-6 mb-6 border-2 border-purple-500/50 fade-in">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        🔬 Deep Scan Results
+                        <span class="text-sm font-normal text-gray-400">(Advanced Analysis)</span>
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="skeleton h-24 rounded"></div>
+                        <div class="skeleton h-32 rounded"></div>
+                        <div class="skeleton h-24 rounded"></div>
+                    </div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(API + '/api/deepscan/' + address);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Deep scan failed');
+                }
+                
+                displayDeepScanResults(data.data);
+                showToast('Deep scan complete!', 'success');
+                
+            } catch (e) {
+                resultsDiv.innerHTML = `
+                    <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-6 mb-6">
+                        <p class="text-red-400 font-semibold">❌ Deep Scan Failed</p>
+                        <p class="text-red-300 text-sm mt-2">${e.message}</p>
+                    </div>
+                `;
+                showToast('Deep scan failed: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔬 Run Deep Scan (Advanced Analysis)';
+            }
+        }
+        
+        function displayDeepScanResults(deepScan) {
+            const resultsDiv = document.getElementById('deepScanResults');
+            
+            let html = `
+                <div class="card rounded-3xl p-6 mb-6 border-2 border-purple-500/50 fade-in">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        🔬 Deep Scan Results
+                        <span class="text-sm font-normal text-gray-400">(Advanced Analysis)</span>
+                    </h3>
+            `;
+            
+            // 1. Liquidity Lock
+            if (deepScan.liquidityLock) {
+                const lock = deepScan.liquidityLock;
+                html += `
+                    <div class="bg-slate-800/50 rounded-xl p-5 mb-4 border ${lock.isLocked ? 'border-emerald-500/30' : 'border-red-500/30'}">
+                        <h4 class="font-bold mb-4 flex items-center gap-2 text-lg">
+                            🔒 Liquidity Lock Check
+                            ${lock.isLocked ? '<span class="text-emerald-400 text-sm">(LOCKED)</span>' : '<span class="text-red-400 text-sm">(NOT LOCKED)</span>'}
+                        </h4>
+                        ${lock.isLocked ? `
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Status</span>
+                                    <span class="text-emerald-400 font-semibold flex items-center gap-2">
+                                        ✅ Liquidity is locked
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Locker</span>
+                                    <span class="text-white font-semibold">${lock.lockerName || 'Unknown'}</span>
+                                </div>
+                                <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 mt-3">
+                                    <p class="text-emerald-400 text-sm">✅ This is a positive sign! Locked liquidity means the team cannot easily rug pull.</p>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                                <p class="text-red-400 font-semibold mb-2">🚨 No liquidity lock detected</p>
+                                <p class="text-red-300 text-sm">The team can remove liquidity at any time. This is a major red flag and rug pull risk!</p>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+            
+            // 2. Top Holder Analysis
+            if (deepScan.holderAnalysis) {
+                const analysis = deepScan.holderAnalysis;
+                
+                html += `
+                    <div class="bg-slate-800/50 rounded-xl p-5 mb-4 border ${analysis.freshWalletCount > 3 ? 'border-yellow-500/30' : 'border-slate-700'}">
+                        <h4 class="font-bold mb-4 flex items-center gap-2 text-lg">
+                            👥 Top Holder Analysis
+                            ${analysis.freshWalletCount > 0 ? `<span class="text-yellow-400 text-sm">(${analysis.freshWalletCount} fresh wallets)</span>` : '<span class="text-emerald-400 text-sm">(All aged wallets)</span>'}
+                        </h4>
+                `;
+                
+                if (analysis.note) {
+                    html += `<p class="text-gray-400 text-sm mb-4 italic">${analysis.note}</p>`;
+                }
+                
+                if (analysis.topHolders && analysis.topHolders.length > 0) {
+                    html += `
+                        <div class="space-y-2 mb-4">
+                            ${analysis.topHolders.slice(0, 10).map(holder => `
+                                <div class="flex justify-between items-center p-2 rounded ${holder.isFresh ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-slate-700/30'}">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-gray-500 text-sm font-mono">#${holder.rank}</span>
+                                        <span class="font-mono text-xs">${holder.address}</span>
+                                        ${holder.isFresh ? '<span class="text-yellow-400 text-xs px-2 py-1 bg-yellow-500/20 rounded">🆕 Fresh</span>' : ''}
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="font-semibold">${holder.percentage}%</span>
+                                        <span class="text-xs text-gray-500 block">${holder.ageHours}h old</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    
+                    if (analysis.freshWalletCount > 0) {
+                        html += `
+                            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                                <p class="text-yellow-400 font-semibold mb-2">⚠️ ${analysis.freshWalletCount} fresh wallet(s) detected in top 10!</p>
+                                <p class="text-yellow-300 text-sm">Fresh wallets (< 24h old) in top holders could be sniper bots, team wallets, or coordinated buyers. Exercise caution.</p>
+                            </div>
+                        `;
+                    } else if (analysis.topHolders.length > 0) {
+                        html += `
+                            <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
+                                <p class="text-emerald-400 text-sm">✅ All top holders have aged wallets - good sign!</p>
+                            </div>
+                        `;
+                    }
+                }
+                
+                html += `</div>`;
+            }
+            
+            // 3. Transaction Patterns with Timeframe Selector
+            if (deepScan.transactionPatterns) {
+                const patterns = deepScan.transactionPatterns;
+                
+                html += `
+                    <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+                        <h4 class="font-bold mb-4 text-lg">📊 Trading Patterns</h4>
+                        
+                        <!-- Timeframe Selector Tabs -->
+                        <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+                            <button onclick="switchTimeframe('m5')" id="timeframe-m5" class="timeframe-tab active px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                                5 Min
+                            </button>
+                            <button onclick="switchTimeframe('h1')" id="timeframe-h1" class="timeframe-tab px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700">
+                                1 Hour
+                            </button>
+                            <button onclick="switchTimeframe('h6')" id="timeframe-h6" class="timeframe-tab px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700">
+                                6 Hours
+                            </button>
+                            <button onclick="switchTimeframe('h24')" id="timeframe-h24" class="timeframe-tab px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700">
+                                24 Hours
+                            </button>
+                        </div>
+                        
+                        <!-- Pattern Data Containers for each timeframe -->
+                        ${['m5', 'h1', 'h6', 'h24'].map(tf => {
+                            const data = patterns[tf];
+                            const buyPressure = data.buyPressure || 0;
+                            const totalTxns = data.buys + data.sells;
+                            const displayName = tf === 'm5' ? '5 Minutes' : tf === 'h1' ? '1 Hour' : tf === 'h6' ? '6 Hours' : '24 Hours';
+                            
+                            return `
+                                <div id="pattern-${tf}" class="pattern-data ${tf === 'm5' ? '' : 'hidden'}">
+                                    <div class="grid grid-cols-3 gap-4 mb-4">
+                                        <div class="text-center p-3 rounded-lg bg-emerald-500/10">
+                                            <p class="text-3xl font-bold text-emerald-400">${data.buys}</p>
+                                            <p class="text-xs text-gray-400 mt-1">Buys</p>
+                                        </div>
+                                        <div class="text-center p-3 rounded-lg bg-red-500/10">
+                                            <p class="text-3xl font-bold text-red-400">${data.sells}</p>
+                                            <p class="text-xs text-gray-400 mt-1">Sells</p>
+                                        </div>
+                                        <div class="text-center p-3 rounded-lg ${buyPressure >= 60 ? 'bg-emerald-500/10' : buyPressure >= 40 ? 'bg-yellow-500/10' : 'bg-red-500/10'}">
+                                            <p class="text-3xl font-bold ${buyPressure >= 60 ? 'text-emerald-400' : buyPressure >= 40 ? 'text-yellow-400' : 'text-red-400'}">${buyPressure.toFixed(0)}%</p>
+                                            <p class="text-xs text-gray-400 mt-1">Buy Pressure</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-emerald-500 to-red-500" style="width: 100%">
+                                            <div class="h-full bg-emerald-500 transition-all duration-700" style="width: ${buyPressure}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between mt-2">
+                                        <span class="text-xs text-gray-500">More Buys</span>
+                                        <span class="text-xs text-gray-500">More Sells</span>
+                                    </div>
+                                    
+                                    ${buyPressure >= 70 ? `
+                                        <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-emerald-400 text-sm">📈 Strong buy pressure in the last ${displayName}!</p>
+                                        </div>
+                                    ` : buyPressure >= 40 ? `
+                                        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-yellow-400 text-sm">⚖️ Balanced buy/sell pressure in the last ${displayName}.</p>
+                                        </div>
+                                    ` : totalTxns > 0 ? `
+                                        <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-red-400 text-sm">📉 Heavy sell pressure in the last ${displayName}!</p>
+                                        </div>
+                                    ` : `
+                                        <div class="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 mt-4">
+                                            <p class="text-gray-400 text-sm">No transactions in the last ${displayName}.</p>
+                                        </div>
+                                    `}
+                                    
+                                    <p class="text-gray-500 text-xs mt-3 text-center">Total transactions: ${totalTxns}</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div class="mt-6 text-center">
+                        <p class="text-gray-500 text-xs">
+                            🔬 Deep scan complete • Data refreshes on each scan
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
         }
     </script>
 </body>
