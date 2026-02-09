@@ -190,6 +190,9 @@
             <button onclick="switchTab('batch')" id="tabBatch" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
                 ⚡ Batch
             </button>
+            <button onclick="switchTab('compare')" id="tabCompare" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+    ⚖️ Compare
+</button>
         </div>
 
         <!-- Scanner Tab -->
@@ -310,6 +313,22 @@
             </div>
         </div>
     </div>
+    <!-- Compare Tab -->
+<div id="compareTab" class="tab-content hidden">
+    <div class="card rounded-3xl p-6 md:p-8">
+        <h2 class="text-xl md:text-2xl font-bold mb-4">⚖️ Compare Tokens</h2>
+        <p class="text-gray-400 mb-6 text-sm">Select 2-3 tokens to compare side-by-side</p>
+        
+        <div id="compareSelector" class="mb-6"></div>
+        
+        <div id="compareResults" class="hidden">
+            <button onclick="performComparison()" class="btn-primary w-full text-white font-bold py-3 px-6 rounded-xl transition-all mb-6">
+                📊 Compare Selected Tokens
+            </button>
+            <div id="comparisonDisplay"></div>
+        </div>
+    </div>
+</div>
 
     <script>
         let chain = 'solana';
@@ -319,6 +338,7 @@
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
         let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
         let priceAlertInterval = null;
+        let selectedForComparison = [];
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
@@ -347,7 +367,7 @@
         }
 
         function switchTab(tab) {
-            ['scanner', 'history', 'watchlist', 'batch'].forEach(t => {
+            ['scanner', 'history', 'watchlist', 'batch', 'compare'].forEach(t => {
                 document.getElementById(t + 'Tab').classList.add('hidden');
                 document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('active');
                 document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('bg-slate-700/30');
@@ -359,6 +379,7 @@
             
             if (tab === 'history') loadHistory();
             if (tab === 'watchlist') loadWatchlist();
+            if (tab === 'compare') loadCompareOptions();
         }
 
         function selectChain(c) {
@@ -1608,6 +1629,161 @@ async function checkPriceAlerts() {
 // Start on page load
 if (watchlist.some(item => item.targetPrice && !item.alertTriggered)) {
     startPriceMonitoring();
+}
+        // ====== COMPARE TOKENS ======
+function loadCompareOptions() {
+    const selector = document.getElementById('compareSelector');
+    const allTokens = [...scanHistory, ...watchlist].filter((token, index, self) => 
+        index === self.findIndex(t => t.address === token.address)
+    );
+    
+    if (allTokens.length < 2) {
+        selector.innerHTML = '<p class="text-gray-400 text-center py-8">You need at least 2 scanned tokens to compare. Scan some tokens first!</p>';
+        document.getElementById('compareResults').classList.add('hidden');
+        return;
+    }
+    
+    selector.innerHTML = `
+        <div class="bg-slate-800/50 rounded-xl p-4">
+            <h3 class="font-semibold mb-4">Select tokens to compare (2-3):</h3>
+            <div class="space-y-2">
+                ${allTokens.slice(0, 10).map(token => `
+                    <label class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-700/50 cursor-pointer transition-all">
+                        <input type="checkbox" 
+                               onchange="toggleCompareSelection('${token.address}')" 
+                               id="compare-${token.address}"
+                               class="w-4 h-4">
+                        <div class="flex-1">
+                            <p class="font-mono text-sm">${token.address.slice(0,8)}...${token.address.slice(-6)}</p>
+                            <div class="flex gap-2 mt-1">
+                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${token.chain.toUpperCase()}</span>
+                                <span class="text-xs px-2 py-1 ${token.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : token.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">
+                                    Score: ${token.score}
+                                </span>
+                            </div>
+                        </div>
+                    </label>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('compareResults').classList.remove('hidden');
+}
+
+function toggleCompareSelection(address) {
+    const checkbox = document.getElementById('compare-' + address);
+    
+    if (checkbox.checked) {
+        if (selectedForComparison.length >= 3) {
+            checkbox.checked = false;
+            showToast('Maximum 3 tokens for comparison', 'warning');
+            return;
+        }
+        selectedForComparison.push(address);
+    } else {
+        selectedForComparison = selectedForComparison.filter(a => a !== address);
+    }
+}
+
+async function performComparison() {
+    if (selectedForComparison.length < 2) {
+        showToast('Select at least 2 tokens to compare', 'warning');
+        return;
+    }
+    
+    const display = document.getElementById('comparisonDisplay');
+    display.innerHTML = '<div class="text-center py-8"><div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div><p class="text-gray-400 mt-4">Loading comparison...</p></div>';
+    
+    // Fetch fresh data for selected tokens
+    const tokensData = [];
+    for (const address of selectedForComparison) {
+        try {
+            const response = await fetch(API + '/api/scan/' + address);
+            const data = await response.json();
+            if (data.success) {
+                const score = calculateScore(data.data);
+                tokensData.push({ ...data.data, address, score });
+            }
+        } catch (e) {
+            console.error('Failed to fetch', address, e);
+        }
+    }
+    
+    if (tokensData.length < 2) {
+        display.innerHTML = '<p class="text-red-400 text-center py-8">Failed to load token data. Try again.</p>';
+        return;
+    }
+    
+    // Find best/worst for each metric
+    const bestScore = Math.max(...tokensData.map(t => t.score));
+    const bestLiq = Math.max(...tokensData.map(t => t.liquidity || 0));
+    const bestVol = Math.max(...tokensData.map(t => t.volume24h || 0));
+    
+    display.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-${tokensData.length} gap-4">
+            ${tokensData.map(token => {
+                const isTopScore = token.score === bestScore;
+                const isTopLiq = token.liquidity === bestLiq;
+                const isTopVol = token.volume24h === bestVol;
+                
+                return `
+                    <div class="card rounded-2xl p-6 ${isTopScore ? 'border-2 border-emerald-500' : ''}">
+                        ${isTopScore ? '<div class="text-center mb-3"><span class="text-xs px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full font-semibold">👑 Best Score</span></div>' : ''}
+                        
+                        <h3 class="text-xl font-bold mb-2">${token.name || 'Unknown'}</h3>
+                        <p class="text-gray-400 mb-1">$${token.symbol || 'N/A'}</p>
+                        <p class="text-xs text-gray-500 font-mono mb-4">${token.address.slice(0,8)}...${token.address.slice(-6)}</p>
+                        
+                        <div class="text-center mb-4">
+                            <div class="text-4xl font-bold ${token.score >= 70 ? 'text-emerald-400' : token.score >= 40 ? 'text-yellow-400' : 'text-red-400'} mb-2">
+                                ${token.score}
+                            </div>
+                            <p class="text-sm text-gray-400">Alpha Score</p>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="bg-slate-700/30 rounded-lg p-3">
+                                <p class="text-xs text-gray-400">Liquidity ${isTopLiq ? '👑' : ''}</p>
+                                <p class="font-bold ${isTopLiq ? 'text-emerald-400' : ''}">$${(token.liquidity || 0).toLocaleString()}</p>
+                            </div>
+                            
+                            <div class="bg-slate-700/30 rounded-lg p-3">
+                                <p class="text-xs text-gray-400">Volume 24h ${isTopVol ? '👑' : ''}</p>
+                                <p class="font-bold ${isTopVol ? 'text-emerald-400' : ''}">$${(token.volume24h || 0).toLocaleString()}</p>
+                            </div>
+                            
+                            <div class="bg-slate-700/30 rounded-lg p-3">
+                                <p class="text-xs text-gray-400">Price</p>
+                                <p class="font-bold">$${token.priceUsd || '0'}</p>
+                            </div>
+                            
+                            <div class="bg-slate-700/30 rounded-lg p-3">
+                                <p class="text-xs text-gray-400">Market Cap</p>
+                                <p class="font-bold">$${((token.marketCap || 0) / 1000000).toFixed(2)}M</p>
+                            </div>
+                        </div>
+                        
+                        <button onclick="rescan('${token.address}')" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all text-sm">
+                            View Full Scan
+                        </button>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+        
+        <div class="mt-6 text-center">
+            <button onclick="clearComparison()" class="text-gray-400 hover:text-white text-sm">
+                Clear Selection & Compare Different Tokens
+            </button>
+        </div>
+    `;
+}
+
+function clearComparison() {
+    selectedForComparison = [];
+    document.querySelectorAll('[id^="compare-"]').forEach(cb => cb.checked = false);
+    document.getElementById('comparisonDisplay').innerHTML = '';
 }
     </script>
 </body>
