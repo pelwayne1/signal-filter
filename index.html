@@ -116,6 +116,29 @@
         .warning-pulse {
             animation: warningPulse 2s ease-in-out infinite;
         }
+        -/* FAVORITE STAR ANIMATION */
+.favorite-star {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
+
+.favorite-star:hover,
+.favorite-star.active {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.favorite-star.active {
+    animation: starPulse 1s ease-in-out infinite;
+}
+
+@keyframes starPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
         @keyframes warningPulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
@@ -271,15 +294,27 @@
         </div>
 
         <!-- History Tab -->
-        <div id="historyTab" class="tab-content hidden">
-            <div class="card rounded-3xl p-6 md:p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl md:text-2xl font-bold">📊 Recent Scans</h2>
-                    <button onclick="clearHistory()" class="text-sm text-red-400 hover:text-red-300 transition-colors">Clear All</button>
-                </div>
-                <div id="historyList"></div>
-            </div>
+<div id="historyTab" class="tab-content hidden">
+    <div class="card rounded-3xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl md:text-2xl font-bold">📊 Recent Scans</h2>
+            <button onclick="clearHistory()" class="text-sm text-red-400 hover:text-red-300 transition-colors">Clear All</button>
         </div>
+        
+        <!-- Favorites Section -->
+        <div id="favoritesSection" class="hidden bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-5 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-yellow-400 flex items-center gap-2">
+                    ⭐ Favorite Scans
+                </h3>
+                <button onclick="clearFavorites()" class="text-xs text-red-400 hover:text-red-300">Clear All</button>
+            </div>
+            <div id="favoritesList"></div>
+        </div>
+        
+        <div id="historyList"></div>
+    </div>
+</div>
 
         <!-- Watchlist Tab -->
         <div id="watchlistTab" class="tab-content hidden">
@@ -339,6 +374,7 @@
         let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
         let priceAlertInterval = null;
         let selectedForComparison = [];
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
@@ -483,33 +519,64 @@
         }
 
         function loadHistory() {
-            const list = document.getElementById('historyList');
-            if (scanHistory.length === 0) {
-                list.innerHTML = '<p class="text-gray-400 text-center py-8">No scans yet. Start scanning tokens!</p>';
-                return;
-            }
-            
-            list.innerHTML = scanHistory.map(scan => `
-                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <p class="font-mono text-sm mb-1">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
-                            <div class="flex gap-2 flex-wrap">
-                                <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${scan.chain.toUpperCase()}</span>
-                                <span class="text-xs px-2 py-1 ${scan.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : scan.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${scan.score}</span>
-                                ${item.targetPrice && !item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-purple-500/20 border border-purple-500/30 text-purple-400 rounded alert-pulse">🎯 Alert Active</span>' : ''}
-${item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded">✅ Hit Target!</span>' : ''}${item.targetPrice && !item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-purple-500/20 border border-purple-500/30 text-purple-400 rounded alert-pulse">🎯 Alert Active</span>' : ''}
-${item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded">✅ Hit Target!</span>' : ''}
-                                <span class="text-xs text-gray-500">${new Date(scan.timestamp).toLocaleString()}</span>
-                            </div>
+    // Load favorites first
+    const favSection = document.getElementById('favoritesSection');
+    const favList = document.getElementById('favoritesList');
+    
+    if (favorites.length > 0) {
+        favSection.classList.remove('hidden');
+        favList.innerHTML = favorites.map(scan => `
+            <div class="bg-slate-800/50 border border-yellow-500/30 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <p class="font-mono text-sm mb-1">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                        <div class="flex gap-2 flex-wrap">
+                            <span class="text-xs px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded">⭐ FAVORITE</span>
+                            <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${scan.chain.toUpperCase()}</span>
+                            <span class="text-xs px-2 py-1 ${scan.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : scan.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${scan.score}</span>
+                            <span class="text-xs text-gray-500">${new Date(scan.timestamp).toLocaleString()}</span>
                         </div>
+                    </div>
+                    <div class="flex gap-2">
                         <button onclick="rescan('${scan.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
                             Rescan
                         </button>
+                        <button onclick="removeFavorite('${scan.address}')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                            Remove
+                        </button>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>
+        `).join('');
+    } else {
+        favSection.classList.add('hidden');
+    }
+    
+    // Load regular history
+    const list = document.getElementById('historyList');
+    if (scanHistory.length === 0) {
+        list.innerHTML = '<p class="text-gray-400 text-center py-8">No scans yet. Start scanning tokens!</p>';
+        return;
+    }
+    
+    list.innerHTML = scanHistory.map(scan => `
+        <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <p class="font-mono text-sm mb-1">${scan.address.slice(0,8)}...${scan.address.slice(-6)}</p>
+                    <div class="flex gap-2 flex-wrap">
+                        <span class="text-xs px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded">${scan.chain.toUpperCase()}</span>
+                        <span class="text-xs px-2 py-1 ${scan.score >= 70 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : scan.score >= 40 ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} border rounded">Score: ${scan.score}</span>
+                        <span class="text-xs text-gray-500">${new Date(scan.timestamp).toLocaleString()}</span>
+                    </div>
+                </div>
+                <button onclick="rescan('${scan.address}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-all">
+                    Rescan
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
 
         function loadWatchlist() {
             const list = document.getElementById('watchlistList');
@@ -946,6 +1013,9 @@ ${item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-emerald-500/20 border
                                 <button onclick="exportAsImage()" class="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
                                     📸 Export
                                 </button>
+                                <button onclick="toggleFavorite('${addr}', '${token.chain}', ${score})" id="favoriteBtn" class="favorite-star bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm">
+    ⭐ Favorite
+</button>
                             </div>
                         </div>
                     </div>
@@ -1171,7 +1241,7 @@ ${item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-emerald-500/20 border
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">Total USD</span>
-                                <span class="font-bold text-emerald-400 text-sm md:text-base">$${token.liquidity.toLocaleString()}</span>
+            ]                    <span class="font-bold text-emerald-400 text-sm md:text-base">$${token.liquidity.toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-400 text-sm md:text-base">Liq/MC Ratio</span>
@@ -1242,7 +1312,7 @@ ${item.alertTriggered ? '<span class="text-xs px-2 py-1 bg-emerald-500/20 border
             } else if (score >= 60) {
                 return `Moderate risk profile detected. Liquidity is ${token.liquidity < 50000 ? 'lower than ideal' : 'acceptable'} at $${(token.liquidity/1000).toFixed(1)}k. The token is ${token.ageHours < 24 ? token.ageHours + ' hours old - still very fresh' : Math.floor(token.ageHours/24) + ' days old'}. ${flags.length > 0 ? `There are ${flags.length} warning sign(s) to consider.` : ''} Recommend waiting for more trading history and community validation before investing significant capital.`;
             } else if (score >= 40) {
-                return `⚠️ Proceed with extreme caution. ${flags.length} red flag(s) detected including ${token.liquidity < 10000 ? 'critically low liquidity' : 'concerning metrics'}. ${token.holderData && token.holderData.topHolderPercent > 40 ? 'Whale concentration is dangerously high.' : ''} This token shows risky characteristics that could indicate a potential scam. Only invest what you can afford to lose completely, and always verify contract safety independently.`;
+                retrn `⚠️ Proceed with extreme caution. ${flags.length} red flag(s) detected including ${token.liquidity < 10000 ? 'critically low liquidity' : 'concerning metrics'}. ${token.holderData && token.holderData.topHolderPercent > 40 ? 'Whale concentration is dangerously high.' : ''} This token shows risky characteristics that could indicate a potential scam. Only invest what you can afford to lose completely, and always verify contract safety independently.`;
             } else {
                 return `🚨 High risk detected! This token has multiple severe warning indicators: ${token.liquidity < 5000 ? 'critically insufficient liquidity' : 'poor fundamentals'}, ${token.ageHours < 1 ? 'just launched (< 1 hour)' : 'suspicious patterns'}. ${!token.contractSafety || token.contractSafety.error ? 'Unable to verify contract safety.' : 'Contract has concerning permissions.'} Strong recommendation to AVOID this token. High probability of rug pull or scam. Protect your capital.`;
             }
@@ -1784,6 +1854,59 @@ function clearComparison() {
     selectedForComparison = [];
     document.querySelectorAll('[id^="compare-"]').forEach(cb => cb.checked = false);
     document.getElementById('comparisonDisplay').innerHTML = '';
+}
+        // ====== FAVORITES ======
+function toggleFavorite(address, chain, score) {
+    const index = favorites.findIndex(f => f.address === address);
+    
+    if (index >= 0) {
+        // Remove from favorites
+        favorites.splice(index, 1);
+        showToast('☆ Removed from favorites', 'info');
+    } else {
+        // Add to favorites
+        favorites.unshift({
+            address,
+            chain,
+            score,
+            timestamp: Date.now()
+        });
+        showToast('⭐ Added to favorites!', 'success');
+    }
+    
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    updateFavoriteButton(address);
+    loadHistory();
+}
+
+function updateFavoriteButton(address) {
+    const btn = document.getElementById('favoriteBtn');
+    if (!btn) return;
+    
+    const isFavorited = favorites.some(f => f.address === address);
+    if (isFavorited) {
+        btn.classList.add('active');
+        btn.innerHTML = '⭐ Favorited';
+    } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '☆ Favorite';
+    }
+}
+
+function removeFavorite(address) {
+    favorites = favorites.filter(f => f.address !== address);
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    loadHistory();
+    showToast('Removed from favorites', 'info');
+}
+
+function clearFavorites() {
+    if (confirm('Clear all favorites?')) {
+        favorites = [];
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        loadHistory();
+        showToast('Favorites cleared', 'info');
+    }
 }
     </script>
 </body>
