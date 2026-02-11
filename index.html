@@ -348,6 +348,9 @@ body[data-theme="light"] {
             <button onclick="switchTab('compare')" id="tabCompare" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
     ⚖️ Compare
 </button>
+            <button onclick="switchTab('portfolio')" id="tabPortfolio" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+    💼 Portfolio
+</button> 
         </div>
 
         <!-- Scanner Tab -->
@@ -496,7 +499,64 @@ body[data-theme="light"] {
         </div>
     </div>
 </div>
-
+<!-- Portfolio Tab -->
+<div id="portfolioTab" class="tab-content hidden">
+    <div class="card rounded-3xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl md:text-2xl font-bold">💼 My Portfolio</h2>
+            <div id="totalPortfolioValue" class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                $0.00
+            </div>
+        </div>
+        
+        <!-- Add Token Form -->
+        <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-6 mb-6">
+            <h3 class="font-bold mb-4 text-lg">➕ Add Token to Portfolio</h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-2">Blockchain</label>
+                <div class="flex gap-3">
+                    <button onclick="selectPortfolioChain('solana')" id="portfolioSolana" class="flex-1 py-2 px-4 rounded-lg font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm">
+                        Solana
+                    </button>
+                    <button onclick="selectPortfolioChain('bsc')" id="portfolioBsc" class="flex-1 py-2 px-4 rounded-lg font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm">
+                        BSC
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-2">Token Address</label>
+                <input 
+                    type="text" 
+                    id="portfolioAddress"
+                    placeholder="Enter token address..."
+                    class="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg py-3 px-4 text-white placeholder-gray-500 text-sm focus:border-blue-500 focus:outline-none"
+                >
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-2">Amount You Own</label>
+                <input 
+                    type="number" 
+                    id="portfolioAmount"
+                    step="0.000001"
+                    placeholder="e.g., 1000"
+                    class="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg py-3 px-4 text-white placeholder-gray-500 text-sm focus:border-blue-500 focus:outline-none"
+                >
+            </div>
+            
+            <button onclick="addToPortfolio()" class="btn-primary w-full text-white font-bold py-3 px-4 rounded-lg transition-all text-sm">
+                💼 Add to Portfolio
+            </button>
+        </div>
+        
+        <!-- Portfolio Holdings -->
+        <div id="portfolioHoldings">
+            <p class="text-gray-400 text-center py-8">No tokens in portfolio yet. Add your first holding above! 👆</p>
+        </div>
+    </div>
+</div>
     <script>
         let chain = 'solana';
         const API = 'https://pelwayne--2e77d232f02211f0a0c942dde27851f2.web.val.run';
@@ -507,6 +567,9 @@ body[data-theme="light"] {
         let priceAlertInterval = null;
         let selectedForComparison = [];
         let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
+let portfolioChain = 'solana';
+let portfolioPriceInterval = null;
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
@@ -535,7 +598,7 @@ body[data-theme="light"] {
         }
 
         function switchTab(tab) {
-            ['scanner', 'history', 'watchlist', 'batch', 'compare'].forEach(t => {
+           ['scanner', 'history', 'watchlist', 'batch', 'compare', 'portfolio'].forEach(t => {
                 document.getElementById(t + 'Tab').classList.add('hidden');
                 document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('active');
                 document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('bg-slate-700/30');
@@ -548,6 +611,7 @@ body[data-theme="light"] {
             if (tab === 'history') loadHistory();
             if (tab === 'watchlist') loadWatchlist();
             if (tab === 'compare') loadCompareOptions();
+            if (tab === 'portfolio') loadPortfolio();
         }
 
         function selectChain(c) {
@@ -2105,6 +2169,226 @@ function closeSettings() {
 
 // Load theme on page load
 loadTheme();
+        // ====== PORTFOLIO TRACKER ======
+function selectPortfolioChain(c) {
+    portfolioChain = c;
+    if (c === 'solana') {
+        document.getElementById('portfolioSolana').className = 'flex-1 py-2 px-4 rounded-lg font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm';
+        document.getElementById('portfolioBsc').className = 'flex-1 py-2 px-4 rounded-lg font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm';
+    } else {
+        document.getElementById('portfolioBsc').className = 'flex-1 py-2 px-4 rounded-lg font-semibold transition-all bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm';
+        document.getElementById('portfolioSolana').className = 'flex-1 py-2 px-4 rounded-lg font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm';
+    }
+}
+
+async function addToPortfolio() {
+    const address = document.getElementById('portfolioAddress').value.trim();
+    const amount = parseFloat(document.getElementById('portfolioAmount').value);
+    
+    if (!address) {
+        showToast('Please enter token address', 'warning');
+        return;
+    }
+    
+    if (!amount || amount <= 0) {
+        showToast('Please enter valid amount', 'warning');
+        return;
+    }
+    
+    // Check if already in portfolio
+    const existing = portfolio.find(p => p.address === address && p.chain === portfolioChain);
+    if (existing) {
+        showToast('Token already in portfolio. Remove it first to update.', 'warning');
+        return;
+    }
+    
+    showToast('Fetching token data...', 'info');
+    
+    try {
+        const response = await fetch(API + '/api/scan/' + address + '?chain=' + portfolioChain);
+        const data = await response.json();
+        
+        if (!data.success || !data.data.priceUsd) {
+            throw new Error('Could not fetch token price');
+        }
+        
+        const currentPrice = parseFloat(data.data.priceUsd);
+        
+        portfolio.unshift({
+            address,
+            chain: portfolioChain,
+            name: data.data.name || 'Unknown',
+            symbol: data.data.symbol || 'N/A',
+            amount,
+            currentPrice,
+            addedPrice: currentPrice,
+            addedAt: Date.now()
+        });
+        
+        localStorage.setItem('portfolio', JSON.stringify(portfolio));
+        
+        // Start price monitoring
+        if (!portfolioPriceInterval) {
+            startPortfolioMonitoring();
+        }
+        
+        // Clear inputs
+        document.getElementById('portfolioAddress').value = '';
+        document.getElementById('portfolioAmount').value = '';
+        
+        loadPortfolio();
+        showToast('✅ Added to portfolio!', 'success');
+        
+    } catch (e) {
+        showToast('Failed to add token: ' + e.message, 'error');
+    }
+}
+
+function removeFromPortfolio(address, chain) {
+    if (confirm('Remove this token from portfolio?')) {
+        portfolio = portfolio.filter(p => !(p.address === address && p.chain === chain));
+        localStorage.setItem('portfolio', JSON.stringify(portfolio));
+        loadPortfolio();
+        showToast('Removed from portfolio', 'info');
+        
+        // Stop monitoring if portfolio is empty
+        if (portfolio.length === 0 && portfolioPriceInterval) {
+            clearInterval(portfolioPriceInterval);
+            portfolioPriceInterval = null;
+        }
+    }
+}
+
+function editPortfolioAmount(address, chain) {
+    const item = portfolio.find(p => p.address === address && p.chain === chain);
+    if (!item) return;
+    
+    const newAmount = prompt(`Update amount for ${item.symbol}:`, item.amount);
+    
+    if (newAmount && parseFloat(newAmount) > 0) {
+        const index = portfolio.findIndex(p => p.address === address && p.chain === chain);
+        portfolio[index].amount = parseFloat(newAmount);
+        localStorage.setItem('portfolio', JSON.stringify(portfolio));
+        loadPortfolio();
+        showToast('Amount updated!', 'success');
+    }
+}
+        function loadPortfolio() {
+    const holdings = document.getElementById('portfolioHoldings');
+    
+    if (portfolio.length === 0) {
+        holdings.innerHTML = '<p class="text-gray-400 text-center py-8">No tokens in portfolio yet. Add your first holding above! 👆</p>';
+        document.getElementById('totalPortfolioValue').textContent = '$0.00';
+        return;
+    }
+    
+    // Calculate total value
+    let totalValue = 0;
+    portfolio.forEach(item => {
+        totalValue += (item.currentPrice || item.addedPrice) * item.amount;
+    });
+    
+    document.getElementById('totalPortfolioValue').textContent = '$' + totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    
+    // Display holdings
+    holdings.innerHTML = portfolio.map(item => {
+        const currentValue = (item.currentPrice || item.addedPrice) * item.amount;
+        const profitLoss = ((item.currentPrice - item.addedPrice) / item.addedPrice) * 100;
+        const isProfitable = profitLoss >= 0;
+        
+        return `
+            <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-3 hover:bg-slate-700/50 transition-all">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold">${item.name}</h3>
+                        <p class="text-sm text-gray-400">$${item.symbol} • ${item.chain.toUpperCase()}</p>
+                        <p class="text-xs text-gray-500 font-mono mt-1">${item.address.slice(0,8)}...${item.address.slice(-6)}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-blue-400">$${currentValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        <p class="text-sm ${isProfitable ? 'text-emerald-400' : 'text-red-400'} font-semibold">
+                            ${isProfitable ? '+' : ''}${profitLoss.toFixed(2)}%
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="bg-slate-700/30 rounded-lg p-3">
+                        <p class="text-xs text-gray-400">Amount</p>
+                        <p class="font-semibold">${item.amount.toLocaleString()}</p>
+                    </div>
+                    <div class="bg-slate-700/30 rounded-lg p-3">
+                        <p class="text-xs text-gray-400">Current Price</p>
+                        <p class="font-semibold">$${(item.currentPrice || item.addedPrice).toFixed(8)}</p>
+                    </div>
+                    <div class="bg-slate-700/30 rounded-lg p-3">
+                        <p class="text-xs text-gray-400">Entry Price</p>
+                        <p class="font-semibold">$${item.addedPrice.toFixed(8)}</p>
+                    </div>
+                    <div class="bg-slate-700/30 rounded-lg p-3">
+                        <p class="text-xs text-gray-400">Total P/L</p>
+                        <p class="font-semibold ${isProfitable ? 'text-emerald-400' : 'text-red-400'}">
+                            ${isProfitable ? '+' : ''}$${((item.currentPrice - item.addedPrice) * item.amount).toFixed(2)}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="editPortfolioAmount('${item.address}', '${item.chain}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-lg transition-all">
+                        Edit Amount
+                    </button>
+                    <button onclick="removeFromPortfolio('${item.address}', '${item.chain}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-lg transition-all">
+                        Remove
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function startPortfolioMonitoring() {
+    portfolioPriceInterval = setInterval(updatePortfolioPrices, 60000); // Every 60 seconds
+    updatePortfolioPrices(); // Update immediately
+}
+
+async function updatePortfolioPrices() {
+    if (portfolio.length === 0) {
+        if (portfolioPriceInterval) {
+            clearInterval(portfolioPriceInterval);
+            portfolioPriceInterval = null;
+        }
+        return;
+    }
+    
+    for (const item of portfolio) {
+        try {
+            const response = await fetch(API + '/api/scan/' + item.address + '?chain=' + item.chain);
+            const data = await response.json();
+            
+            if (data.success && data.data.priceUsd) {
+                const index = portfolio.findIndex(p => p.address === item.address && p.chain === item.chain);
+                if (index >= 0) {
+                    portfolio[index].currentPrice = parseFloat(data.data.priceUsd);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to update price for', item.address, e);
+        }
+    }
+    
+    localStorage.setItem('portfolio', JSON.stringify(portfolio));
+    
+    // Reload portfolio display if on portfolio tab
+    const portfolioTab = document.getElementById('portfolioTab');
+    if (portfolioTab && !portfolioTab.classList.contains('hidden')) {
+        loadPortfolio();
+    }
+}
+
+// Start monitoring on page load if portfolio has items
+if (portfolio.length > 0) {
+    startPortfolioMonitoring();
+}
     </script>
 </body>
 </html>
