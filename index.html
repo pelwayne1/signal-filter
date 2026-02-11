@@ -17,18 +17,75 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; }
+        /* THEME VARIABLES */
+:root[data-theme="dark"] {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #0f172a;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+}
+
+:root[data-theme="light"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+}
+
+/* ACCENT COLORS */
+:root[data-accent="blue"] {
+    --accent-from: #3b82f6;
+    --accent-to: #8b5cf6;
+}
+
+:root[data-accent="purple"] {
+    --accent-from: #a855f7;
+    --accent-to: #7c3aed;
+}
+
+:root[data-accent="green"] {
+    --accent-from: #10b981;
+    --accent-to: #059669;
+}
+
+:root[data-accent="orange"] {
+    --accent-from: #f59e0b;
+    --accent-to: #d97706;
+}
+
+:root[data-accent="pink"] {
+    --accent-from: #ec4899;
+    --accent-to: #db2777;
+}
+        * { 
+    font-family: 'Inter', sans-serif; 
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
         body {
-            background: #0a0e17;
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
-        }
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+body[data-theme="dark"] {
+    background: #0a0e17;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
+}
+
+body[data-theme="light"] {
+    background: #f8fafc;
+    background-image: none;
+}
         .card {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(148, 163, 184, 0.1);
         }
+        body[data-theme="light"] .card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(203, 213, 225, 0.3);
+}
         .card:hover {
             border-color: rgba(59, 130, 246, 0.3);
             box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
@@ -44,8 +101,8 @@
             50% { opacity: .5; }
         }
         .btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-        }
+    background: linear-gradient(135deg, var(--accent-from) 0%, var(--accent-to) 100%);
+}
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-1px);
             box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
@@ -93,9 +150,9 @@
             transition: all 0.3s ease;
         }
         .tab-btn.active {
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-            color: white;
-        }
+    background: linear-gradient(135deg, var(--accent-from) 0%, var(--accent-to) 100%);
+    color: white;
+}
         .skeleton {
             animation: skeleton-loading 1s linear infinite alternate;
         }
@@ -151,6 +208,34 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
 }
+        /* SETTINGS MODAL */
+.settings-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-modal.active {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.settings-content {
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    border: 2px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+}
     </style>
 </head>
 <body class="text-white min-h-screen p-4 md:p-8">
@@ -174,10 +259,57 @@
             </button>
         </div>
     </div>
+    <!-- Settings Modal -->
+<div id="settingsModal" class="settings-modal">
+    <div class="settings-content">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">⚙️ Settings</h2>
+            <button onclick="closeSettings()" class="text-3xl hover:text-red-400 transition-colors">&times;</button>
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-semibold mb-3">🌓 Theme</label>
+            <div class="flex gap-3">
+                <button onclick="changeTheme('dark')" id="themeDark" class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                    🌙 Dark
+                </button>
+                <button onclick="changeTheme('light')" id="themeLight" class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50">
+                    ☀️ Light
+                </button>
+            </div>
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-semibold mb-3">🎨 Accent Color</label>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="changeAccent('blue')" id="accentBlue" class="py-3 px-4 rounded-xl font-semibold transition-all bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm">
+                    💙 Blue
+                </button>
+                <button onclick="changeAccent('purple')" id="accentPurple" class="py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm">
+                    💜 Purple
+                </button>
+                <button onclick="changeAccent('green')" id="accentGreen" class="py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm">
+                    💚 Green
+                </button>
+                <button onclick="changeAccent('orange')" id="accentOrange" class="py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm">
+                    🧡 Orange
+                </button>
+                <button onclick="changeAccent('pink')" id="accentPink" class="py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm">
+                    💗 Pink
+                </button>
+            </div>
+        </div>
+        
+        <p class="text-xs text-gray-500 text-center">💡 Your preferences are saved automatically</p>
+    </div>
+</div>
 
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <div class="text-center mb-8 md:mb-12">
+       <div class="text-center mb-8 md:mb-12 relative">
+    <button onclick="openSettings()" class="absolute top-0 right-0 text-2xl hover:rotate-90 transition-transform duration-300">
+        ⚙️
+    </button>
             <div class="flex items-center justify-center gap-3 md:gap-4 mb-4">
                 <div id="mainIcon" class="sniff-icon relative">
                     <div class="absolute inset-0 bg-blue-500 blur-xl opacity-50"></div>
@@ -1908,6 +2040,71 @@ function clearFavorites() {
         showToast('Favorites cleared', 'info');
     }
 }
+        // ====== THEMES ======
+function loadTheme() {
+    const theme = localStorage.getItem('theme') || 'dark';
+    const accent = localStorage.getItem('accent') || 'blue';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-accent', accent);
+    document.body.setAttribute('data-theme', theme);
+    updateThemeButtons(theme, accent);
+}
+
+function changeTheme(theme) {
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+    updateThemeButtons(theme, localStorage.getItem('accent') || 'blue');
+    showToast(`🌓 Theme changed to ${theme}`, 'success');
+}
+
+function changeAccent(accent) {
+    localStorage.setItem('accent', accent);
+    document.documentElement.setAttribute('data-accent', accent);
+    updateThemeButtons(localStorage.getItem('theme') || 'dark', accent);
+    showToast(`🎨 Accent changed to ${accent}`, 'success');
+}
+
+function updateThemeButtons(theme, accent) {
+    // Update theme buttons
+    document.getElementById('themeDark').className = theme === 'dark' ? 
+        'flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-purple-600 text-white' :
+        'flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50';
+    
+    document.getElementById('themeLight').className = theme === 'light' ? 
+        'flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-gradient-to-r from-yellow-400 to-orange-400 text-white' :
+        'flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50';
+    
+    // Update accent buttons
+    const accents = ['blue', 'purple', 'green', 'orange', 'pink'];
+    const accentColors = {
+        blue: 'from-blue-500 to-purple-600',
+        purple: 'from-purple-500 to-purple-600',
+        green: 'from-green-500 to-green-600',
+        orange: 'from-orange-500 to-orange-600',
+        pink: 'from-pink-500 to-pink-600'
+    };
+    
+    accents.forEach(a => {
+        const btn = document.getElementById('accent' + a.charAt(0).toUpperCase() + a.slice(1));
+        if (a === accent) {
+            btn.className = `py-3 px-4 rounded-xl font-semibold transition-all bg-gradient-to-r ${accentColors[a]} text-white text-sm`;
+        } else {
+            btn.className = 'py-3 px-4 rounded-xl font-semibold transition-all bg-slate-700/50 text-gray-300 hover:bg-slate-700 border border-slate-600/50 text-sm';
+        }
+    });
+}
+
+function openSettings() {
+    document.getElementById('settingsModal').classList.add('active');
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('active');
+}
+
+// Load theme on page load
+loadTheme();
     </script>
 </body>
 </html>
