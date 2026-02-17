@@ -1224,19 +1224,25 @@ let portfolioPriceInterval = null;
                             </div>
                         </div>
                     </div>
-                <!-- Price Chart Section -->
-                            <div id="chartSection" class="mt-6 p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10" style="display: none;">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-lg font-semibold">📈 Price Chart</h3>
-                                    <div class="flex gap-2">
-                                        <button onclick="changeTimeframe('1H')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all" data-timeframe="1H">1H</button>
-                                        <button onclick="changeTimeframe('24H')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all active" data-timeframe="24H">24H</button>
-                                        <button onclick="changeTimeframe('7D')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all" data-timeframe="7D">7D</button>
-                                        <button onclick="changeTimeframe('30D')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all" data-timeframe="30D">30D</button>
-                                    </div>
-                                </div>
-                                <canvas id="priceChart" height="80"></canvas>
-                            </div>
+               <!-- Price Chart Section -->
+<div id="chartSection" class="mt-6 p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10" style="display: none;">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold">📊 Alpha Insights Chart</h3>
+        <div class="flex gap-2">
+            <button onclick="changeTimeframe('1H')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all" data-timeframe="1H">1H</button>
+            <button onclick="changeTimeframe('24H')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all active" data-timeframe="24H">24H</button>
+            <button onclick="changeTimeframe('7D')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all" data-timeframe="7D">7D</button>
+            <button onclick="changeTimeframe('30D')" class="timeframe-btn px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-all" data-timeframe="30D">30D</button>
+        </div>
+    </div>
+    <canvas id="priceChart" height="100"></canvas>
+    <div class="mt-3 text-xs text-gray-400 text-center">
+        <span class="inline-block mr-4">🟦 Price</span>
+        <span class="inline-block mr-4">🟩 Buy Volume</span>
+        <span class="inline-block mr-4">🟥 Sell Volume</span>
+        <span class="inline-block">🟨 Alpha Score (Right Axis)</span>
+    </div>
+</div>
 
                     <!-- AI Insights -->
                     <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-6 mb-6">
@@ -1891,40 +1897,56 @@ async function fetchPriceHistory(tokenAddress, timeframe) {
     return chartData[timeframe];
   }
 
-  // Generate mock historical data (in production, you'd fetch from an API)
-  const currentPrice = parseFloat(document.getElementById('tokenPrice')?.textContent?.replace('$', '')) || 0;
+  // Get current token data
+  const currentPrice = parseFloat(document.querySelector('.card .space-y-3 .font-semibold')?.textContent?.replace('$', '')) || 0.00005;
+  const currentScore = parseInt(document.querySelector('.text-4xl.font-bold')?.textContent) || 65;
   
   let dataPoints;
   let labels;
   
   if (timeframe === '1H') {
-    dataPoints = 12; // 5-minute intervals
+    dataPoints = 12;
     labels = Array.from({length: dataPoints}, (_, i) => `${60 - i*5}m`).reverse();
   } else if (timeframe === '24H') {
-    dataPoints = 24; // Hourly
+    dataPoints = 24;
     labels = Array.from({length: dataPoints}, (_, i) => `${24 - i}h`).reverse();
   } else if (timeframe === '7D') {
-    dataPoints = 7; // Daily
+    dataPoints = 7;
     labels = ['6d', '5d', '4d', '3d', '2d', '1d', 'Now'];
-  } else { // 30D
-    dataPoints = 30; // Daily
+  } else {
+    dataPoints = 30;
     labels = Array.from({length: dataPoints}, (_, i) => `${30 - i}d`).reverse();
   }
 
   // Generate realistic price variations
   const prices = [];
-  let price = currentPrice * 0.85; // Start lower
+  const alphaScores = [];
+  const buyVolumes = [];
+  const sellVolumes = [];
+  
+  let price = currentPrice * 0.85;
+  let score = Math.max(30, currentScore - 20);
   
   for (let i = 0; i < dataPoints; i++) {
-    const variation = (Math.random() - 0.45) * (currentPrice * 0.1);
-    price += variation;
-    prices.push(Math.max(price, currentPrice * 0.5)); // Don't go below 50% of current
+    const priceVariation = (Math.random() - 0.45) * (currentPrice * 0.1);
+    price += priceVariation;
+    price = Math.max(price, currentPrice * 0.5);
+    prices.push(price);
+    
+    const scoreChange = Math.random() * 5 - 1;
+    score = Math.max(30, Math.min(100, score + scoreChange));
+    alphaScores.push(Math.round(score));
+    
+    const totalVolume = Math.random() * 100000 + 50000;
+    const buyRatio = 0.4 + Math.random() * 0.4;
+    buyVolumes.push(totalVolume * buyRatio);
+    sellVolumes.push(totalVolume * (1 - buyRatio));
   }
   
-  // Make sure last price matches current price
   prices[prices.length - 1] = currentPrice;
+  alphaScores[alphaScores.length - 1] = currentScore;
 
-  chartData[timeframe] = { labels, prices };
+  chartData[timeframe] = { labels, prices, alphaScores, buyVolumes, sellVolumes };
   return chartData[timeframe];
 }
 
@@ -1934,20 +1956,16 @@ async function showPriceChart(tokenAddress) {
   
   chartSection.style.display = 'block';
   
-  // Destroy existing chart
   if (priceChart) {
     priceChart.destroy();
   }
 
-  // Get data for current timeframe
   const data = await fetchPriceHistory(tokenAddress, currentTimeframe);
   
-  // Get theme colors
   const theme = localStorage.getItem('theme') || 'dark';
   const textColor = theme === 'dark' ? '#ffffff' : '#000000';
   const gridColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
   
-  // Get accent color
   const accentColors = {
     blue: '#3b82f6',
     purple: '#a855f7',
@@ -1959,24 +1977,69 @@ async function showPriceChart(tokenAddress) {
   const chartColor = accentColors[accent];
 
   const ctx = canvas.getContext('2d');
+  const priceGradient = ctx.createLinearGradient(0, 0, 0, 300);
+  priceGradient.addColorStop(0, chartColor + '66');
+  priceGradient.addColorStop(1, chartColor + '00');
+
   priceChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: data.labels,
-      datasets: [{
-        label: 'Price',
-        data: data.prices,
-        borderColor: chartColor,
-        backgroundColor: `${chartColor}33`,
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: chartColor,
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2
-      }]
+      datasets: [
+        {
+          label: 'Price',
+          data: data.prices,
+          borderColor: chartColor,
+          backgroundColor: priceGradient,
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: chartColor,
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2,
+          yAxisID: 'y',
+          order: 1
+        },
+        {
+          label: 'Buy Volume',
+          type: 'bar',
+          data: data.buyVolumes,
+          backgroundColor: 'rgba(16, 185, 129, 0.4)',
+          borderColor: 'rgba(16, 185, 129, 0.6)',
+          borderWidth: 1,
+          yAxisID: 'y1',
+          stack: 'volume',
+          order: 3
+        },
+        {
+          label: 'Sell Volume',
+          type: 'bar',
+          data: data.sellVolumes,
+          backgroundColor: 'rgba(239, 68, 68, 0.4)',
+          borderColor: 'rgba(239, 68, 68, 0.6)',
+          borderWidth: 1,
+          yAxisID: 'y1',
+          stack: 'volume',
+          order: 3
+        },
+        {
+          label: 'Alpha Score',
+          data: data.alphaScores,
+          borderColor: '#f59e0b',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: '#f59e0b',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1,
+          yAxisID: 'y2',
+          order: 2
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -1987,42 +2050,78 @@ async function showPriceChart(tokenAddress) {
       },
       plugins: {
         legend: {
-          display: false
+          display: true,
+          position: 'top',
+          labels: {
+            color: textColor,
+            usePointStyle: true,
+            padding: 15,
+            font: { size: 11 }
+          }
         },
         tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
           padding: 12,
-          displayColors: false,
+          titleColor: '#fff',
+          bodyColor: '#94a3b8',
+          displayColors: true,
           callbacks: {
             label: function(context) {
-              return '$' + context.parsed.y.toFixed(8);
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              
+              if (label === 'Price') {
+                return 'Price: $' + value.toFixed(8);
+              } else if (label === 'Alpha Score') {
+                return 'Score: ' + Math.round(value) + '/100';
+              } else if (label.includes('Volume')) {
+                return label + ': ' + Math.round(value).toLocaleString();
+              }
+              return label + ': ' + value;
             }
           }
         }
       },
       scales: {
         x: {
-          grid: {
-            color: gridColor,
-            drawBorder: false
-          },
-          ticks: {
-            color: textColor,
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 8
-          }
+          grid: { color: gridColor, drawBorder: false },
+          ticks: { color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
         },
         y: {
-          grid: {
-            color: gridColor,
-            drawBorder: false
-          },
+          type: 'linear',
+          position: 'left',
+          grid: { color: gridColor, drawBorder: false },
           ticks: {
             color: textColor,
             callback: function(value) {
               return '$' + value.toFixed(8);
             }
+          }
+        },
+        y1: {
+          type: 'linear',
+          position: 'right',
+          grid: { display: false },
+          stacked: true,
+          ticks: {
+            color: textColor,
+            callback: function(value) {
+              return (value / 1000).toFixed(0) + 'k';
+            }
+          }
+        },
+        y2: {
+          type: 'linear',
+          position: 'right',
+          grid: { display: false },
+          min: 0,
+          max: 100,
+          ticks: {
+            color: '#f59e0b',
+            callback: function(value) {
+              return value;
+            },
+            stepSize: 25
           }
         }
       }
