@@ -357,6 +357,9 @@ body[data-theme="light"] {
             <button onclick="switchTab('portfolio')" id="tabPortfolio" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
     💼 Portfolio
 </button> 
+            <button onclick="switchTab('chat')" id="tabChat" class="tab-btn flex-1 min-w-[100px] py-2 px-4 rounded-lg font-semibold text-sm bg-slate-700/30 whitespace-nowrap">
+    🤖 AI Chat
+</button>
         </div>
 
         <!-- Scanner Tab -->
@@ -563,6 +566,56 @@ body[data-theme="light"] {
         </div>
     </div>
 </div>
+    <!-- AI Chat Tab -->
+<div id="chatTab" class="tab-content hidden">
+    <div class="card rounded-3xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl md:text-2xl font-bold">🤖 AI Chat Assistant</h2>
+            <button onclick="clearChat()" class="text-sm text-red-400 hover:text-red-300 transition-colors">Clear Chat</button>
+        </div>
+        
+        <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-4 mb-6">
+            <p class="text-sm text-gray-300">💡 <strong>Ask me anything!</strong> I can help you understand scan results, explain crypto concepts, or answer questions about the tokens you've scanned.</p>
+        </div>
+        
+        <!-- Chat Messages Container -->
+        <div id="chatMessages" class="bg-slate-800/50 rounded-xl p-4 mb-4 h-96 overflow-y-auto space-y-4">
+            <div class="flex gap-3">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-sm">
+                        🤖
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="bg-slate-700/50 rounded-lg p-3">
+                        <p class="text-sm text-gray-200">Hi! I'm Alpha AI, your crypto assistant. I can help you understand token scans, explain metrics, and answer questions about crypto investing. What would you like to know?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat Input -->
+        <div class="flex gap-3">
+            <input 
+                type="text" 
+                id="chatInput"
+                placeholder="Ask me anything about crypto or your scans..."
+                class="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg py-3 px-4 text-white placeholder-gray-500 text-sm focus:border-blue-500 focus:outline-none"
+                onkeypress="if(event.key === 'Enter') sendChatMessage()"
+            >
+            <button 
+                onclick="sendChatMessage()" 
+                id="chatSendBtn"
+                class="btn-primary px-6 py-3 rounded-lg font-semibold text-sm">
+                Send
+            </button>
+        </div>
+        
+        <p class="text-xs text-gray-500 text-center mt-4">
+            💡 Tip: Scan a token first for context-aware responses!
+        </p>
+    </div>
+</div>
     <script>
         let chain = 'solana';
         const API = 'https://pelwayne--2e77d232f02211f0a0c942dde27851f2.web.val.run';
@@ -603,8 +656,8 @@ let portfolioPriceInterval = null;
             document.getElementById('installPrompt').classList.add('hidden');
         }
 
-        function switchTab(tab) {
-           ['scanner', 'history', 'watchlist', 'batch', 'compare', 'portfolio'].forEach(t => {
+       function switchTab(tab) {
+           ['scanner', 'history', 'watchlist', 'batch', 'compare', 'portfolio', 'chat'].forEach(t => {
                 document.getElementById(t + 'Tab').classList.add('hidden');
                 document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('active');
                 document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('bg-slate-700/30');
@@ -1043,6 +1096,8 @@ let portfolioPriceInterval = null;
 
                 showResults(data.data, addr, score);
                 showToast('Scan complete!', 'success');
+                // Store token context for AI chat
+                storeTokenContext(data.data, score);
 
             } catch (e) {
                 err.textContent = '⚠️ ' + e.message;
@@ -2793,6 +2848,204 @@ async function updatePortfolioPrices() {
 // Start monitoring on page load if portfolio has items
 if (portfolio.length > 0) {
     startPortfolioMonitoring();
+}
+        // ============================================
+// FEATURE #8: AI CHAT ASSISTANT
+// ============================================
+
+let chatHistory = [];
+let lastScannedToken = null;
+
+// Store the last scanned token data for context
+function storeTokenContext(tokenData, score) {
+    lastScannedToken = {
+        name: tokenData.name,
+        symbol: tokenData.symbol,
+        chain: tokenData.chain,
+        score: score,
+        priceUsd: tokenData.priceUsd,
+        liquidity: tokenData.liquidity,
+        volume24h: tokenData.volume24h,
+        marketCap: tokenData.marketCap,
+        ageHours: tokenData.ageHours,
+        topHolderPercent: tokenData.holderData?.topHolderPercent || 0,
+        redFlags: [] // We'll populate this from the flags array
+    };
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) {
+        showToast('Please enter a message', 'warning');
+        return;
+    }
+    
+    // Clear input
+    input.value = '';
+    
+    // Add user message to chat
+    addMessageToChat('user', message);
+    
+    // Show typing indicator
+    const typingId = addTypingIndicator();
+    
+    // Disable send button
+    const sendBtn = document.getElementById('chatSendBtn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = '...';
+    
+    try {
+        // Call backend
+        const response = await fetch(API + '/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: message,
+                tokenData: lastScannedToken,
+                conversationHistory: chatHistory
+            })
+        });
+        
+        const data = await response.json();
+        
+        // Remove typing indicator
+        removeTypingIndicator(typingId);
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to get AI response');
+        }
+        
+        // Add AI response to chat
+        addMessageToChat('assistant', data.response);
+        
+        // Update conversation history
+        chatHistory.push({ role: 'user', content: message });
+        chatHistory.push({ role: 'assistant', content: data.response });
+        
+        // Keep only last 10 messages
+        if (chatHistory.length > 20) {
+            chatHistory = chatHistory.slice(-20);
+        }
+        
+    } catch (e) {
+        removeTypingIndicator(typingId);
+        addMessageToChat('assistant', '❌ Sorry, I encountered an error: ' + e.message);
+        showToast('Chat error: ' + e.message, 'error');
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+    }
+}
+
+function addMessageToChat(role, content) {
+    const messagesContainer = document.getElementById('chatMessages');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'flex gap-3 fade-in';
+    
+    if (role === 'user') {
+        messageDiv.innerHTML = `
+            <div class="flex-1"></div>
+            <div class="flex-shrink-0 order-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-sm">
+                    👤
+                </div>
+            </div>
+            <div class="flex-1 order-1">
+                <div class="bg-blue-600/30 rounded-lg p-3 ml-auto max-w-[80%]">
+                    <p class="text-sm text-white">${escapeHtml(content)}</p>
+                </div>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-sm">
+                    🤖
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="bg-slate-700/50 rounded-lg p-3">
+                    <p class="text-sm text-gray-200">${formatAIResponse(content)}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function addTypingIndicator() {
+    const messagesContainer = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'flex gap-3 fade-in';
+    typingDiv.innerHTML = `
+        <div class="flex-shrink-0">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-sm">
+                🤖
+            </div>
+        </div>
+        <div class="flex-1">
+            <div class="bg-slate-700/50 rounded-lg p-3">
+                <div class="flex gap-1">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.4s"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return 'typing-indicator';
+}
+
+function removeTypingIndicator(id) {
+    const indicator = document.getElementById(id);
+    if (indicator) indicator.remove();
+}
+
+function formatAIResponse(text) {
+    // Convert markdown-style formatting to HTML
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Convert newlines to <br>
+    text = text.replace(/\n/g, '<br>');
+    
+    return text;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function clearChat() {
+    if (confirm('Clear all chat messages?')) {
+        chatHistory = [];
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = `
+            <div class="flex gap-3">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-sm">
+                        🤖
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="bg-slate-700/50 rounded-lg p-3">
+                        <p class="text-sm text-gray-200">Hi! I'm Alpha AI, your crypto assistant. I can help you understand token scans, explain metrics, and answer questions about crypto investing. What would you like to know?</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        showToast('Chat cleared', 'info');
+    }
 }
     </script>
 </body>
