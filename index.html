@@ -1249,8 +1249,6 @@ document.head.appendChild(style);
                 setTimeout(showMobileInstallPrompt, 2000);
 
             } catch (e) {
-
-            } catch (e) {
                 err.textContent = '⚠️ ' + e.message;
                 err.classList.remove('hidden');
                 res.innerHTML = '';
@@ -2926,16 +2924,17 @@ function updateThemeButtons(theme, accent) {
 }
 
 
-// Load theme on page load
-loadTheme();
-        
-        function openSettings() {
+function openSettings() {
     document.getElementById('settingsModal').classList.add('active');
 }
 
 function closeSettings() {
     document.getElementById('settingsModal').classList.remove('active');
 }
+
+// Load theme on page load
+loadTheme();
+        
         // ====== PORTFOLIO TRACKER ======
 function selectPortfolioChain(c) {
     portfolioChain = c;
