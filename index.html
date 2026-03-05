@@ -493,17 +493,17 @@ body[data-theme="light"] {
             </div>
         </div>
     </div>
-    <!-- Compare Tab -->
+  <!-- Compare Tab - UPGRADED! -->
 <div id="compareTab" class="tab-content hidden">
     <div class="card rounded-3xl p-6 md:p-8">
-        <h2 class="text-xl md:text-2xl font-bold mb-4">⚖️ Compare Tokens</h2>
-        <p class="text-gray-400 mb-6 text-sm">Select 2-3 tokens to compare side-by-side</p>
+        <h2 class="text-xl md:text-2xl font-bold mb-4">⚖️ Advanced Token Comparison</h2>
+        <p class="text-gray-400 mb-6 text-sm">Select 2-3 tokens for detailed side-by-side analysis with AI insights</p>
         
         <div id="compareSelector" class="mb-6"></div>
         
         <div id="compareResults" class="hidden">
-            <button onclick="performComparison()" class="btn-primary w-full text-white font-bold py-3 px-6 rounded-xl transition-all mb-6">
-                📊 Compare Selected Tokens
+            <button onclick="performAdvancedComparison()" class="btn-primary w-full text-white font-bold py-3 px-6 rounded-xl transition-all mb-6">
+                📊 Generate Advanced Comparison
             </button>
             <div id="comparisonDisplay"></div>
         </div>
@@ -2413,14 +2413,14 @@ function toggleCompareSelection(address) {
     }
 }
 
-async function performComparison() {
+async function performAdvancedComparison() {
     if (selectedForComparison.length < 2) {
         showToast('Select at least 2 tokens to compare', 'warning');
         return;
     }
     
     const display = document.getElementById('comparisonDisplay');
-    display.innerHTML = '<div class="text-center py-8"><div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div><p class="text-gray-400 mt-4">Loading comparison...</p></div>';
+    display.innerHTML = '<div class="text-center py-8"><div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div><p class="text-gray-400 mt-4">Analyzing tokens...</p></div>';
     
     // Fetch fresh data for selected tokens
     const tokensData = [];
@@ -2442,69 +2442,224 @@ async function performComparison() {
         return;
     }
     
-    // Find best/worst for each metric
-    const bestScore = Math.max(...tokensData.map(t => t.score));
-    const bestLiq = Math.max(...tokensData.map(t => t.liquidity || 0));
-    const bestVol = Math.max(...tokensData.map(t => t.volume24h || 0));
+    // Generate advanced comparison grid
+    display.innerHTML = generateAdvancedComparisonGrid(tokensData);
+}
+
+function generateAdvancedComparisonGrid(tokens) {
+    // Find best values for each metric
+    const bestScore = Math.max(...tokens.map(t => t.score));
+    const bestLiq = Math.max(...tokens.map(t => t.liquidity || 0));
+    const bestVol = Math.max(...tokens.map(t => t.volume24h || 0));
+    const lowestHolder = Math.min(...tokens.map(t => t.holderData?.topHolderPercent || 100));
+    const bestSocial = Math.max(...tokens.map(t => t.socialInfo?.socialScore || 0));
     
-    display.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-${tokensData.length} gap-4">
-            ${tokensData.map(token => {
-                const isTopScore = token.score === bestScore;
-                const isTopLiq = token.liquidity === bestLiq;
-                const isTopVol = token.volume24h === bestVol;
-                
-                return `
-                    <div class="card rounded-2xl p-6 ${isTopScore ? 'border-2 border-emerald-500' : ''}">
-                        ${isTopScore ? '<div class="text-center mb-3"><span class="text-xs px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full font-semibold">👑 Best Score</span></div>' : ''}
+    // Helper function to get color class
+    const getMetricColor = (value, good, ok) => {
+        if (value >= good) return 'text-emerald-400';
+        if (value >= ok) return 'text-yellow-400';
+        return 'text-red-400';
+    };
+    
+    const getMetricBg = (value, good, ok) => {
+        if (value >= good) return 'bg-emerald-500/10 border-emerald-500/30';
+        if (value >= ok) return 'bg-yellow-500/10 border-yellow-500/30';
+        return 'bg-red-500/10 border-red-500/30';
+    };
+    
+    // Build comparison grid
+    let html = `
+        <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-6 mb-6">
+            <h3 class="font-bold text-lg mb-4">📊 Detailed Comparison Grid</h3>
+            
+            <!-- Responsive table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-700">
+                            <th class="text-left py-3 px-2 font-semibold">Metric</th>
+                            ${tokens.map((token, i) => `
+                                <th class="text-center py-3 px-2">
+                                    <div class="font-bold">${token.name || 'Token ' + (i+1)}</div>
+                                    <div class="text-xs text-gray-400">$${token.symbol || 'N/A'}</div>
+                                </th>
+                            `).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Alpha Score Row -->
+                        <tr class="border-b border-slate-700/50">
+                            <td class="py-4 px-2 font-semibold">🎯 Alpha Score</td>
+                            ${tokens.map(token => {
+                                const isWinner = token.score === bestScore;
+                                const color = getMetricColor(token.score, 70, 40);
+                                return `
+                                    <td class="text-center py-4 px-2">
+                                        <div class="inline-block ${getMetricBg(token.score, 70, 40)} border rounded-lg px-3 py-2">
+                                            <span class="text-2xl font-bold ${color}">${token.score}</span>
+                                            ${isWinner ? '<span class="ml-1">👑</span>' : ''}
+                                        </div>
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
                         
-                        <h3 class="text-xl font-bold mb-2">${token.name || 'Unknown'}</h3>
-                        <p class="text-gray-400 mb-1">$${token.symbol || 'N/A'}</p>
-                        <p class="text-xs text-gray-500 font-mono mb-4">${token.address.slice(0,8)}...${token.address.slice(-6)}</p>
+                        <!-- Liquidity Row -->
+                        <tr class="border-b border-slate-700/50">
+                            <td class="py-4 px-2 font-semibold">💵 Liquidity</td>
+                            ${tokens.map(token => {
+                                const liq = token.liquidity || 0;
+                                const isWinner = liq === bestLiq;
+                                const color = getMetricColor(liq, 50000, 10000);
+                                return `
+                                    <td class="text-center py-4 px-2">
+                                        <div class="${color} font-bold">$${(liq/1000).toFixed(0)}k</div>
+                                        ${isWinner ? '<div class="text-xs mt-1">👑 Best</div>' : ''}
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
                         
-                        <div class="text-center mb-4">
-                            <div class="text-4xl font-bold ${token.score >= 70 ? 'text-emerald-400' : token.score >= 40 ? 'text-yellow-400' : 'text-red-400'} mb-2">
-                                ${token.score}
-                            </div>
-                            <p class="text-sm text-gray-400">Alpha Score</p>
-                        </div>
+                        <!-- Volume Row -->
+                        <tr class="border-b border-slate-700/50">
+                            <td class="py-4 px-2 font-semibold">📈 Volume 24h</td>
+                            ${tokens.map(token => {
+                                const vol = token.volume24h || 0;
+                                const isWinner = vol === bestVol;
+                                const color = getMetricColor(vol, 100000, 10000);
+                                return `
+                                    <td class="text-center py-4 px-2">
+                                        <div class="${color} font-bold">$${(vol/1000).toFixed(0)}k</div>
+                                        ${isWinner ? '<div class="text-xs mt-1">👑 Best</div>' : ''}
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
                         
-                        <div class="space-y-3">
-                            <div class="bg-slate-700/30 rounded-lg p-3">
-                                <p class="text-xs text-gray-400">Liquidity ${isTopLiq ? '👑' : ''}</p>
-                                <p class="font-bold ${isTopLiq ? 'text-emerald-400' : ''}">$${(token.liquidity || 0).toLocaleString()}</p>
-                            </div>
-                            
-                            <div class="bg-slate-700/30 rounded-lg p-3">
-                                <p class="text-xs text-gray-400">Volume 24h ${isTopVol ? '👑' : ''}</p>
-                                <p class="font-bold ${isTopVol ? 'text-emerald-400' : ''}">$${(token.volume24h || 0).toLocaleString()}</p>
-                            </div>
-                            
-                            <div class="bg-slate-700/30 rounded-lg p-3">
-                                <p class="text-xs text-gray-400">Price</p>
-                                <p class="font-bold">$${token.priceUsd || '0'}</p>
-                            </div>
-                            
-                            <div class="bg-slate-700/30 rounded-lg p-3">
-                                <p class="text-xs text-gray-400">Market Cap</p>
-                                <p class="font-bold">$${((token.marketCap || 0) / 1000000).toFixed(2)}M</p>
-                            </div>
-                        </div>
+                        <!-- Top Holder Row -->
+                        <tr class="border-b border-slate-700/50">
+                            <td class="py-4 px-2 font-semibold">🐋 Top Holder</td>
+                            ${tokens.map(token => {
+                                const holder = token.holderData?.topHolderPercent || 0;
+                                const isWinner = holder === lowestHolder;
+                                const color = holder < 20 ? 'text-emerald-400' : holder < 40 ? 'text-yellow-400' : 'text-red-400';
+                                return `
+                                    <td class="text-center py-4 px-2">
+                                        <div class="${color} font-bold">${holder.toFixed(1)}%</div>
+                                        ${isWinner ? '<div class="text-xs mt-1">👑 Best</div>' : ''}
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
                         
-                        <button onclick="rescan('${token.address}')" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all text-sm">
-                            View Full Scan
+                        <!-- Age Row -->
+                        <tr class="border-b border-slate-700/50">
+                            <td class="py-4 px-2 font-semibold">⏰ Age</td>
+                            ${tokens.map(token => {
+                                const hours = token.ageHours || 0;
+                                const days = Math.floor(hours / 24);
+                                const color = hours > 168 ? 'text-emerald-400' : hours > 24 ? 'text-yellow-400' : 'text-red-400';
+                                return `
+                                    <td class="text-center py-4 px-2">
+                                        <div class="${color} font-bold">${days > 0 ? days + 'd' : hours + 'h'}</div>
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
+                        
+                        <!-- Social Score Row -->
+                        <tr class="border-b border-slate-700/50">
+                            <td class="py-4 px-2 font-semibold">📱 Social</td>
+                            ${tokens.map(token => {
+                                const social = token.socialInfo?.socialScore || 0;
+                                const isWinner = social === bestSocial;
+                                const color = getMetricColor(social, 80, 40);
+                                return `
+                                    <td class="text-center py-4 px-2">
+                                        <div class="${color} font-bold">${social}/100</div>
+                                        ${isWinner ? '<div class="text-xs mt-1">👑 Best</div>' : ''}
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
+                        
+                        <!-- Overall Verdict Row -->
+                        <tr class="bg-slate-800/50">
+                            <td class="py-4 px-2 font-bold">🎯 Verdict</td>
+                            ${tokens.map(token => {
+                                const verdict = token.score >= 70 ? {text: 'SAFE', emoji: '✅', color: 'text-emerald-400'} :
+                                               token.score >= 40 ? {text: 'RISKY', emoji: '⚠️', color: 'text-yellow-400'} :
+                                               {text: 'AVOID', emoji: '❌', color: 'text-red-400'};
+                                return `
+                                    <td class="text-center py-4 px-2">
+                                        <div class="${verdict.color} font-bold">
+                                            ${verdict.emoji} ${verdict.text}
+                                        </div>
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    // Add AI Recommendation
+    const winnerToken = tokens.find(t => t.score === bestScore);
+    html += `
+        <div class="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-6 mb-6">
+            <div class="flex items-start gap-3">
+                <span class="text-2xl">🤖</span>
+                <div class="flex-1">
+                    <p class="font-bold text-purple-400 mb-2">AI Recommendation</p>
+                    <p class="text-sm text-gray-300">
+                        ${generateComparisonInsight(tokens, winnerToken)}
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add action buttons
+    html += `
+        <div class="grid grid-cols-1 md:grid-cols-${tokens.length} gap-4 mb-6">
+            ${tokens.map(token => `
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                    <h4 class="font-bold mb-3">${token.name}</h4>
+                    <div class="space-y-2">
+                        <button onclick="rescan('${token.address}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-lg transition-all">
+                            🔄 Rescan
+                        </button>
+                        <button onclick="addToWatchlist('${token.address}', '${token.chain}', ${token.score})" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2 rounded-lg transition-all">
+                            ⭐ Watch
                         </button>
                     </div>
-                `;
-            }).join('')}
+                </div>
+            `).join('')}
         </div>
         
-        <div class="mt-6 text-center">
-            <button onclick="clearComparison()" class="text-gray-400 hover:text-white text-sm">
+        <div class="text-center">
+            <button onclick="clearComparison()" class="text-gray-400 hover:text-white text-sm transition-colors">
                 Clear Selection & Compare Different Tokens
             </button>
         </div>
     `;
+    
+    return html;
+}
+
+function generateComparisonInsight(tokens, winner) {
+    const winnerName = winner.name || 'one of these tokens';
+    const loserToken = tokens.find(t => t.score === Math.min(...tokens.map(x => x.score)));
+    
+    if (winner.score >= 70) {
+        return `<strong>${winnerName}</strong> stands out as the safest option with an Alpha Score of ${winner.score}/100. It has ${winner.liquidity > 100000 ? 'excellent' : 'good'} liquidity ($${(winner.liquidity/1000).toFixed(0)}k) and ${winner.holderData?.topHolderPercent < 20 ? 'well-distributed' : 'acceptable'} token distribution. ${winner.socialInfo?.socialScore >= 80 ? 'Strong social presence adds credibility.' : ''} Consider this for your portfolio.`;
+    } else if (winner.score >= 40) {
+        return `All tokens show moderate risk levels. <strong>${winnerName}</strong> has the highest Alpha Score (${winner.score}/100) but still requires caution. ${loserToken.name} shows concerning metrics with a score of ${loserToken.score}/100. Recommend waiting for more trading history before investing.`;
+    } else {
+        return `⚠️ <strong>High risk detected across all tokens.</strong> The highest score is only ${winner.score}/100, indicating serious concerns. ${loserToken.liquidity < 10000 ? 'Low liquidity' : 'Poor fundamentals'} and ${loserToken.holderData?.topHolderPercent > 40 ? 'whale concentration' : 'other red flags'} suggest avoiding these tokens entirely. Consider scanning more established projects.`;
+    }
 }
 
 function clearComparison() {
