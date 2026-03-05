@@ -2925,16 +2925,17 @@ function updateThemeButtons(theme, accent) {
     });
 }
 
-function openSettings() {
+
+// Load theme on page load
+loadTheme();
+        
+        function openSettings() {
     document.getElementById('settingsModal').classList.add('active');
 }
 
 function closeSettings() {
     document.getElementById('settingsModal').classList.remove('active');
 }
-
-// Load theme on page load
-loadTheme();
         // ====== PORTFOLIO TRACKER ======
 function selectPortfolioChain(c) {
     portfolioChain = c;
