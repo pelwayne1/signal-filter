@@ -360,7 +360,7 @@ body[data-theme="light"] {
             <!-- NEW: Quick Stats -->
             <div class="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-6">
                 <div class="text-center">
-                    <p class="text-2xl md:text-3xl font-bold text-blue-400">10,000+</p>
+                    <p class="text-2xl md:text-3xl font-bold text-blue-400" id="totalScansCounter">10,000+</p>
                     <p class="text-xs md:text-sm text-gray-400">Tokens Scanned</p>
                 </div>
                 <div class="text-center">
@@ -880,6 +880,28 @@ body[data-theme="light"] {
     <script>
         let chain = 'solana';
         const API = 'https://pelwayne--2e77d232f02211f0a0c942dde27851f2.web.val.run';
+        
+        // ============================================
+        // REAL-TIME SCAN COUNTER
+        // ============================================
+        let totalScans = parseInt(localStorage.getItem('totalScans') || '10000');
+
+        function updateScanCounter() {
+            totalScans++;
+            localStorage.setItem('totalScans', totalScans);
+            const counter = document.getElementById('totalScansCounter');
+            if (counter) {
+                counter.textContent = totalScans.toLocaleString() + '+';
+            }
+        }
+
+        // Update counter on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const counter = document.getElementById('totalScansCounter');
+            if (counter) {
+                counter.textContent = totalScans.toLocaleString() + '+';
+            }
+        });
         let deferredPrompt;
         let currentTokenAddress = '';
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
@@ -1500,8 +1522,9 @@ document.head.appendChild(style);
                 if (scanHistory.length > 10) scanHistory.pop();
                 localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
 
-                showResults(data.data, addr, score);
+               showResults(data.data, addr, score);
                 showToast('Scan complete!', 'success');
+                updateScanCounter();
                // Store token context for AI chat
                 storeTokenContext(data.data, score);
                 
