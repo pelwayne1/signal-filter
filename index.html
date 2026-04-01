@@ -252,6 +252,21 @@ body[data-theme="light"] {
     border: 2px solid rgba(148, 163, 184, 0.2);
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
 }
+        /* Email Popup Animation */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-slideUp {
+            animation: slideUp 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="text-white min-h-screen p-4 md:p-8">
@@ -901,6 +916,64 @@ body[data-theme="light"] {
             if (counter) {
                 counter.textContent = totalScans.toLocaleString() + '+';
             }
+        });
+        // ============================================
+        // EMAIL CAPTURE POPUP
+        // ============================================
+        
+        // Show popup after 30 seconds (only once per session)
+        function showEmailPopup() {
+            const hasSeenPopup = sessionStorage.getItem('emailPopupSeen');
+            const hasSubmittedEmail = localStorage.getItem('emailSubmitted');
+            
+            if (!hasSeenPopup && !hasSubmittedEmail) {
+                setTimeout(() => {
+                    document.getElementById('emailPopup').classList.remove('hidden');
+                    sessionStorage.setItem('emailPopupSeen', 'true');
+                }, 30000); // 30 seconds
+            }
+        }
+        
+        // Close popup
+        function closeEmailPopup() {
+            document.getElementById('emailPopup').classList.add('hidden');
+        }
+        
+        // Submit email
+        async function submitEmail(event) {
+            event.preventDefault();
+            const email = document.getElementById('emailInput').value;
+            
+            try {
+                // Store email locally (you'll process these later)
+                let emails = JSON.parse(localStorage.getItem('earlyAccessEmails') || '[]');
+                emails.push({
+                    email: email,
+                    timestamp: new Date().toISOString(),
+                    scans: totalScans
+                });
+                localStorage.setItem('earlyAccessEmails', JSON.stringify(emails));
+                localStorage.setItem('emailSubmitted', 'true');
+                
+                // Show success message
+                showToast('🎉 You\'re on the list! We\'ll notify you when Pro launches.', 'success');
+                closeEmailPopup();
+                
+                // Update spots remaining (fake urgency)
+                const spotsLeft = document.getElementById('spotsLeft');
+                if (spotsLeft) {
+                    const current = parseInt(spotsLeft.textContent);
+                    spotsLeft.textContent = Math.max(1, current - 1);
+                }
+                
+            } catch (error) {
+                showToast('Something went wrong. Please try again!', 'error');
+            }
+        }
+        
+        // Initialize popup on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showEmailPopup();
         });
         let deferredPrompt;
         let currentTokenAddress = '';
