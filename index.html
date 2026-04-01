@@ -3637,5 +3637,70 @@ function clearChat() {
     }
 }
     </script>
+    <!-- EMAIL CAPTURE POPUP -->
+    <div id="emailPopup" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-purple-500/30 rounded-3xl p-8 max-w-md w-full relative animate-slideUp">
+            <!-- Close Button -->
+            <button onclick="closeEmailPopup()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            
+            <!-- Icon -->
+            <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">👑</span>
+            </div>
+            
+            <!-- Title -->
+            <h3 class="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Get Pro for FREE! 🎉
+            </h3>
+            
+            <!-- Subtitle -->
+            <p class="text-gray-400 text-center mb-6 text-sm">
+                First 100 users get <strong class="text-white">lifetime Pro access</strong> when we launch. No credit card needed.
+            </p>
+            
+            <!-- Benefits -->
+            <div class="space-y-2 mb-6">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-emerald-400">✓</span>
+                    <span class="text-gray-300">Unlimited scans & AI chat</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-emerald-400">✓</span>
+                    <span class="text-gray-300">Advanced alerts & priority support</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-emerald-400">✓</span>
+                    <span class="text-gray-300">Worth $9.99/mo - yours FREE forever</span>
+                </div>
+            </div>
+            
+            <!-- Email Form -->
+            <form id="emailForm" onsubmit="submitEmail(event)" class="space-y-3">
+                <input 
+                    type="email" 
+                    id="emailInput"
+                    placeholder="Enter your email"
+                    required
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition-colors"
+                >
+                <button 
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg"
+                >
+                    🚀 Join Early Access (FREE)
+                </button>
+            </form>
+            
+            <!-- Fine Print -->
+            <p class="text-center text-xs text-gray-500 mt-4">
+                ⏰ <span id="spotsLeft">87</span>/100 spots remaining
+            </p>
+        </div>
+    </div>
+
 </body>
 </html>
